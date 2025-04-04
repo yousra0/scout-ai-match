@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
+  BarChart as BarChartIcon,
   Bookmark,
   Calendar,
   ChevronLeft,
@@ -18,11 +19,36 @@ import {
   MapPin,
   MessageSquare,
   Phone,
+  Play,
   Share2,
   Star,
   ThumbsUp,
+  TrendingUp,
   UserPlus,
+  Video,
 } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { ChartContainer } from '@/components/ui/chart';
+import { 
+  RadarChart, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  PolarRadiusAxis, 
+  Radar, 
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Bar
+} from 'recharts';
 
 // Mock player data
 const playerData = {
@@ -52,9 +78,46 @@ const playerData = {
     defending: 45,
     physical: 76
   },
+  recentPerformance: [
+    { name: 'Match 1', goals: 2, assists: 1 },
+    { name: 'Match 2', goals: 0, assists: 2 },
+    { name: 'Match 3', goals: 1, assists: 0 },
+    { name: 'Match 4', goals: 3, assists: 1 },
+    { name: 'Match 5', goals: 1, assists: 2 },
+  ],
   highlights: [
-    { title: 'Season Highlights 2024/25', url: '#', thumbnail: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80' },
-    { title: 'Best Goals Compilation', url: '#', thumbnail: 'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80' }
+    { 
+      id: '1',
+      title: 'Season Highlights 2024/25', 
+      url: '#', 
+      thumbnail: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+      duration: '3:42',
+      views: '12.5K'
+    },
+    { 
+      id: '2',
+      title: 'Best Goals Compilation', 
+      url: '#', 
+      thumbnail: 'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+      duration: '5:18',
+      views: '8.3K'
+    },
+    { 
+      id: '3',
+      title: 'Skills & Tricks 2024', 
+      url: '#', 
+      thumbnail: 'https://images.unsplash.com/photo-1543326727-cf6c39e8f84c?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+      duration: '2:56',
+      views: '6.7K'
+    },
+    { 
+      id: '4',
+      title: 'Match Winning Performance vs. Liverpool', 
+      url: '#', 
+      thumbnail: 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
+      duration: '4:22',
+      views: '15.2K'
+    }
   ],
   experience: [
     { 
@@ -75,9 +138,62 @@ const playerData = {
   ]
 };
 
+// Transform player attributes for the radar chart
+const radarData = [
+  {
+    subject: 'Pace',
+    A: playerData.attributes.pace,
+    fullMark: 100,
+  },
+  {
+    subject: 'Shooting',
+    A: playerData.attributes.shooting,
+    fullMark: 100,
+  },
+  {
+    subject: 'Passing',
+    A: playerData.attributes.passing,
+    fullMark: 100,
+  },
+  {
+    subject: 'Dribbling',
+    A: playerData.attributes.dribbling,
+    fullMark: 100,
+  },
+  {
+    subject: 'Defending',
+    A: playerData.attributes.defending,
+    fullMark: 100,
+  },
+  {
+    subject: 'Physical',
+    A: playerData.attributes.physical,
+    fullMark: 100,
+  },
+];
+
+// Transform player stats for the bar chart
+const statsData = [
+  { name: 'Matches', value: playerData.stats.matches },
+  { name: 'Goals', value: playerData.stats.goals },
+  { name: 'Assists', value: playerData.stats.assists },
+  { name: 'Yellow Cards', value: playerData.stats.yellowCards },
+  { name: 'Red Cards', value: playerData.stats.redCards },
+];
+
 const PlayerProfilePage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const { id } = useParams();
+
+  const handleVideoSelect = (videoId: string) => {
+    setSelectedVideo(videoId);
+  };
+
+  const handleCloseVideo = () => {
+    setSelectedVideo(null);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -188,16 +304,59 @@ const PlayerProfilePage = () => {
                         
                         <div>
                           <h3 className="text-lg font-semibold mb-3">Key Attributes</h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {Object.entries(playerData.attributes).map(([key, value]) => (
-                              <div key={key} className="space-y-1">
-                                <div className="flex justify-between text-sm">
-                                  <span className="capitalize">{key}</span>
-                                  <span className="font-medium">{value}/100</span>
+                          <div className="grid grid-cols-1 gap-4">
+                            <Card>
+                              <CardHeader className="pb-0">
+                                <CardTitle className="text-base flex items-center">
+                                  <BarChartIcon className="h-4 w-4 mr-2" />
+                                  Player Attributes Radar
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="pb-2">
+                                <div className="h-72">
+                                  <ChartContainer 
+                                    config={{
+                                      attributes: { color: "#8B5CF6" }
+                                    }}
+                                  >
+                                    <RadarChart data={radarData}>
+                                      <PolarGrid />
+                                      <PolarAngleAxis dataKey="subject" />
+                                      <PolarRadiusAxis domain={[0, 100]} />
+                                      <Radar
+                                        name="Player"
+                                        dataKey="A"
+                                        stroke="#8B5CF6"
+                                        fill="#8B5CF6"
+                                        fillOpacity={0.5}
+                                      />
+                                      <Legend />
+                                    </RadarChart>
+                                  </ChartContainer>
                                 </div>
-                                <Progress value={value} className="h-2" />
-                              </div>
-                            ))}
+                              </CardContent>
+                            </Card>
+
+                            <Accordion type="single" collapsible className="w-full">
+                              <AccordionItem value="detailed-attributes">
+                                <AccordionTrigger className="text-sm font-medium">
+                                  View Detailed Attributes
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                    {Object.entries(playerData.attributes).map(([key, value]) => (
+                                      <div key={key} className="space-y-1">
+                                        <div className="flex justify-between text-sm">
+                                          <span className="capitalize">{key}</span>
+                                          <span className="font-medium">{value}/100</span>
+                                        </div>
+                                        <Progress value={value} className="h-2" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
                           </div>
                         </div>
                         
@@ -218,6 +377,61 @@ const PlayerProfilePage = () => {
                       
                       {/* Stats Tab */}
                       <TabsContent value="stats" className="space-y-6">
+                        <Card>
+                          <CardHeader className="pb-0">
+                            <CardTitle className="text-base flex items-center">
+                              <BarChartIcon className="h-4 w-4 mr-2" />
+                              Performance Statistics
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="h-64">
+                              <ChartContainer 
+                                config={{
+                                  stats: { color: "#8B5CF6" }
+                                }}
+                              >
+                                <BarChart data={statsData}>
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="name" />
+                                  <YAxis />
+                                  <Tooltip />
+                                  <Bar dataKey="value" fill="#8B5CF6" />
+                                </BarChart>
+                              </ChartContainer>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader className="pb-0">
+                            <CardTitle className="text-base flex items-center">
+                              <TrendingUp className="h-4 w-4 mr-2" />
+                              Recent Performance
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="h-64">
+                              <ChartContainer 
+                                config={{
+                                  goals: { color: "#8B5CF6" },
+                                  assists: { color: "#22C55E" }
+                                }}
+                              >
+                                <BarChart data={playerData.recentPerformance}>
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="name" />
+                                  <YAxis />
+                                  <Tooltip />
+                                  <Legend />
+                                  <Bar dataKey="goals" fill="#8B5CF6" name="Goals" />
+                                  <Bar dataKey="assists" fill="#22C55E" name="Assists" />
+                                </BarChart>
+                              </ChartContainer>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                           <Card className="text-center">
                             <CardHeader className="py-3">
@@ -264,35 +478,76 @@ const PlayerProfilePage = () => {
                             </CardContent>
                           </Card>
                         </div>
-                        
-                        <div>
-                          <h3 className="text-lg font-semibold mb-4">Performance Metrics</h3>
-                          <div className="bg-gray-100 rounded-lg p-4 text-center">
-                            <p className="text-gray-500 text-sm">Detailed performance metrics and statistics will be displayed here.</p>
-                          </div>
-                        </div>
                       </TabsContent>
                       
                       {/* Highlights Tab */}
                       <TabsContent value="highlights" className="space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          {playerData.highlights.map((highlight, index) => (
-                            <div key={index} className="border border-border rounded-lg overflow-hidden">
-                              <div className="aspect-video bg-gray-200 relative">
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="h-12 w-12 rounded-full bg-white/80 flex items-center justify-center">
-                                    <div className="w-0 h-0 border-t-[8px] border-t-transparent border-l-[12px] border-l-primary border-b-[8px] border-b-transparent ml-1"></div>
+                        {selectedVideo ? (
+                          <div className="mb-6">
+                            <Card>
+                              <CardContent className="p-0 overflow-hidden rounded-lg">
+                                <div className="relative aspect-video bg-black flex items-center justify-center">
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <Video className="h-16 w-16 text-white/50" />
+                                  </div>
+                                  <div className="absolute top-4 right-4">
+                                    <Button 
+                                      variant="secondary" 
+                                      size="sm" 
+                                      onClick={handleCloseVideo}
+                                      className="bg-black/50 hover:bg-black/70 text-white"
+                                    >
+                                      Close
+                                    </Button>
+                                  </div>
+                                  <div className="absolute bottom-4 left-4">
+                                    <h3 className="text-white font-medium">
+                                      {playerData.highlights.find(h => h.id === selectedVideo)?.title}
+                                    </h3>
                                   </div>
                                 </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        ) : null}
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {playerData.highlights.map((highlight) => (
+                            <Card key={highlight.id} className="overflow-hidden hover-scale group">
+                              <div 
+                                className="aspect-video bg-gray-200 relative cursor-pointer"
+                                onClick={() => handleVideoSelect(highlight.id)}
+                                style={{
+                                  backgroundImage: `url(${highlight.thumbnail})`,
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center'
+                                }}
+                              >
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity">
+                                  <div className="h-12 w-12 rounded-full bg-white/80 flex items-center justify-center">
+                                    <Play className="h-6 w-6 text-primary ml-1" />
+                                  </div>
+                                </div>
+                                <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                                  {highlight.duration}
+                                </div>
                               </div>
-                              <div className="p-4">
-                                <h4 className="font-semibold">{highlight.title}</h4>
-                              </div>
-                            </div>
+                              <CardContent className="p-4">
+                                <h4 className="font-semibold line-clamp-1 mb-1">{highlight.title}</h4>
+                                <div className="flex justify-between items-center text-sm text-gray-500">
+                                  <span className="flex items-center gap-1">
+                                    <Play className="h-3 w-3" /> {highlight.views} views
+                                  </span>
+                                  <Badge variant="outline" className="text-xs bg-primary/5">
+                                    Highlight
+                                  </Badge>
+                                </div>
+                              </CardContent>
+                            </Card>
                           ))}
                         </div>
                         
-                        <div className="text-center">
+                        <div className="text-center pt-4">
                           <Button variant="outline">Load More Videos</Button>
                         </div>
                       </TabsContent>
