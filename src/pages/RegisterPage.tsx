@@ -26,13 +26,13 @@ const RegisterPage = () => {
         <div className="absolute inset-0 flex flex-col justify-center items-center p-16 text-white">
           <h1 className="text-3xl font-bold mb-6 text-center">Join the AI-Powered Football Community</h1>
           <p className="text-lg text-center max-w-lg text-gray-200">
-            Create your profile and get personalized matches based on your skills and preferences.
+            Create your profile and connect with players, clubs, agents and service providers in the football ecosystem.
           </p>
           
           <div className="mt-12 grid grid-cols-3 gap-4 w-full max-w-md">
             <div className="aspect-square bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-4 flex flex-col items-center justify-center text-center">
-              <div className="text-3xl font-bold text-white mb-1">4,500+</div>
-              <div className="text-xs text-gray-300">Active Players</div>
+              <div className="text-3xl font-bold text-white mb-1">13+</div>
+              <div className="text-xs text-gray-300">User Types</div>
             </div>
             
             <div className="aspect-square bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-4 flex flex-col items-center justify-center text-center">
@@ -46,13 +46,15 @@ const RegisterPage = () => {
             </div>
             
             <div className="col-span-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-4">
-              <div className="text-sm font-medium mb-2">How it works:</div>
-              <ol className="text-sm text-gray-300 space-y-2 list-decimal pl-5">
-                <li>Create your free profile</li>
-                <li>Set your preferences and goals</li>
-                <li>Get AI-powered match recommendations</li>
-                <li>Connect with clubs or players</li>
-              </ol>
+              <div className="text-sm font-medium mb-2">Choose the right profile for you:</div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="text-gray-300">• Players</div>
+                <div className="text-gray-300">• Clubs</div>
+                <div className="text-gray-300">• Managers & Staff</div>
+                <div className="text-gray-300">• Agents</div>
+                <div className="text-gray-300">• Service Providers</div>
+                <div className="text-gray-300">• And more...</div>
+              </div>
             </div>
           </div>
         </div>
