@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
+import { Database } from '@/integrations/supabase/types';
 
 interface AuthContextType {
   session: Session | null;
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         // If user is a player, fetch player details
         if (data.user_type === 'player') {
-          const { data: playerData } = await supabase
+          const { data: playerData, error: playerError } = await supabase
             .from('player_details')
             .select('*')
             .eq('id', userId)
@@ -88,7 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } else {
           // Fetch stakeholder details for non-players
-          const { data: stakeholderData } = await supabase
+          const { data: stakeholderData, error: stakeholderError } = await supabase
             .from('stakeholder_details')
             .select('*')
             .eq('id', userId)

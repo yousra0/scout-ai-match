@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -310,12 +309,6 @@ const RegisterForm = () => {
             await supabase.auth.updateUser({
               data: { avatar: avatarUrl }
             });
-            
-            // Also update the profile record directly for immediate access
-            await supabase
-              .from('profiles')
-              .update({ avatar_url: avatarUrl })
-              .eq('id', data.user.id);
           }
         }
         

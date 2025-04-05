@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ interface PlayerMedia {
   media_url: string;
   media_type: 'photo' | 'video';
   created_at: string;
+  player_id: string;
 }
 
 interface PlayerHighlightsProps {
@@ -67,6 +69,7 @@ const PlayerHighlights = ({ highlights: defaultHighlights = [], photos: defaultP
   const [photos, setPhotos] = useState<Photo[]>(defaultPhotos);
   const [playerMedia, setPlayerMedia] = useState<PlayerMedia[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCurrentUser, setIsCurrentUser] = useState(false);
 
   const fetchPlayerMedia = async () => {
     if (!id) return;
@@ -113,9 +116,20 @@ const PlayerHighlights = ({ highlights: defaultHighlights = [], photos: defaultP
     }
   };
 
-  useState(() => {
+  useEffect(() => {
     fetchPlayerMedia();
-  });
+    checkCurrentUser();
+  }, [id]);
+
+  const checkCurrentUser = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsCurrentUser(session?.user?.id === id);
+    } catch (error) {
+      console.error('Error checking user:', error);
+      setIsCurrentUser(false);
+    }
+  };
 
   const handleVideoSelect = (videoId: string) => {
     setSelectedVideo(videoId);
@@ -217,16 +231,6 @@ const PlayerHighlights = ({ highlights: defaultHighlights = [], photos: defaultP
     }
   };
 
-  const isCurrentUserProfile = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.user?.id === id;
-    } catch (error) {
-      console.error('Error checking user:', error);
-      return false;
-    }
-  };
-
   return (
     <Tabs defaultValue="videos" className="space-y-6">
       <div className="flex justify-between items-center mb-4">
@@ -235,7 +239,7 @@ const PlayerHighlights = ({ highlights: defaultHighlights = [], photos: defaultP
           <TabsTrigger value="photos">Photos</TabsTrigger>
         </TabsList>
         
-        {isCurrentUserProfile() && (
+        {isCurrentUser && (
           <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="ml-4">
