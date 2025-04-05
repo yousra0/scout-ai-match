@@ -9,7 +9,141 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      player_details: {
+        Row: {
+          age: number | null
+          club: string | null
+          country: string | null
+          description: string | null
+          id: string
+          position: string | null
+        }
+        Insert: {
+          age?: number | null
+          club?: string | null
+          country?: string | null
+          description?: string | null
+          id: string
+          position?: string | null
+        }
+        Update: {
+          age?: number | null
+          club?: string | null
+          country?: string | null
+          description?: string | null
+          id?: string
+          position?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_details_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_media: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          media_type: string
+          media_url: string
+          player_id: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          media_type: string
+          media_url: string
+          player_id?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          media_type?: string
+          media_url?: string
+          player_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_media_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_type: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+          user_type: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
+      stakeholder_details: {
+        Row: {
+          company: string | null
+          experience: string | null
+          id: string
+          license: string | null
+          role: string | null
+          services: string | null
+        }
+        Insert: {
+          company?: string | null
+          experience?: string | null
+          id: string
+          license?: string | null
+          role?: string | null
+          services?: string | null
+        }
+        Update: {
+          company?: string | null
+          experience?: string | null
+          id?: string
+          license?: string | null
+          role?: string | null
+          services?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stakeholder_details_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

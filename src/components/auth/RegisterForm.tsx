@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Upload } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Simplified user types
 const userTypes = [
@@ -58,6 +59,7 @@ const RegisterForm = () => {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -215,11 +217,36 @@ const RegisterForm = () => {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadAvatar = async (userId: string): Promise<string | null> => {
+    if (!avatarFile) return null;
+    
+    try {
+      const fileExt = avatarFile.name.split('.').pop();
+      const filePath = `${userId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('player-media')
+        .upload(filePath, avatarFile);
+        
+      if (uploadError) {
+        console.error('Error uploading avatar:', uploadError);
+        return null;
+      }
+      
+      const { data } = supabase.storage.from('player-media').getPublicUrl(filePath);
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error in avatar upload:', error);
+      return null;
     }
   };
 
@@ -248,33 +275,63 @@ const RegisterForm = () => {
     
     setIsLoading(true);
     
-    // Here we would integrate with the backend API
     try {
-      // Fake API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
-      // Store user info in localStorage for demo purposes
-      const userData = {
-        userType,
-        fullName,
+      // Register with Supabase
+      const { data, error } = await supabase.auth.signUp({
         email,
-        avatar: avatarPreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`,
-        isLoggedIn: true
-      };
-      
-      localStorage.setItem('userData', JSON.stringify(userData));
-      
-      toast({
-        title: "Account created",
-        description: "We've created your account successfully.",
+        password,
+        options: {
+          data: {
+            fullName,
+            userType,
+            position,
+            age,
+            clubName,
+            league,
+            role,
+            experience,
+            license,
+            company,
+            services,
+            // We'll update the avatar URL after upload
+          }
+        }
       });
       
-      // Redirect to dashboard
-      navigate('/dashboard');
-    } catch (error) {
+      if (error) throw error;
+      
+      if (data.user) {
+        // Upload avatar if selected
+        if (avatarFile) {
+          const avatarUrl = await uploadAvatar(data.user.id);
+          
+          // Update user metadata with avatar URL
+          if (avatarUrl) {
+            await supabase.auth.updateUser({
+              data: { avatar: avatarUrl }
+            });
+            
+            // Also update the profile record directly for immediate access
+            await supabase
+              .from('profiles')
+              .update({ avatar_url: avatarUrl })
+              .eq('id', data.user.id);
+          }
+        }
+        
+        toast({
+          title: "Account created",
+          description: "We've created your account successfully. You can now sign in.",
+        });
+        
+        // Redirect to dashboard or login
+        navigate('/login');
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error);
       toast({
         title: "Registration failed",
-        description: "There was a problem with your registration.",
+        description: error.message || "There was a problem with your registration.",
         variant: "destructive",
       });
     } finally {
