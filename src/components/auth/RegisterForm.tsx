@@ -1,28 +1,43 @@
 
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Loader2, Upload } from 'lucide-react';
 
-// User type definitions with their display names
+// Simplified user types
 const userTypes = [
   { value: 'player', label: 'Player' },
+  { value: 'coach', label: 'Coach' },
   { value: 'club', label: 'Club' },
-  { value: 'manager', label: 'Manager & Staff' },
-  { value: 'player_agent', label: 'Player\'s Agent' },
-  { value: 'recruiting_agent', label: 'Recruiting Agent' },
-  { value: 'service_provider', label: 'Service Provider' },
-  { value: 'sport_management', label: 'Sporting Management Agency' },
-  { value: 'communication', label: 'Communication Box' },
-  { value: 'fitness_club', label: 'Fitness Club' },
+  { value: 'agent', label: 'Agent' },
   { value: 'equipment_supplier', label: 'Equipment Supplier' },
-  { value: 'clothing_brand', label: 'Sports Clothing Brand' },
-  { value: 'travel_agency', label: 'Traveling Agency' },
   { value: 'sponsor', label: 'Sponsor' },
+];
+
+// Player positions
+const playerPositions = [
+  "Goalkeeper",
+  "Centre-Back",
+  "Left-Back",
+  "Right-Back",
+  "Full-Back",
+  "Sweeper",
+  "Defensive Midfield",
+  "Central Midfield",
+  "Right Midfield",
+  "Left Midfield",
+  "Attacking Midfield",
+  "Left Winger",
+  "Right Winger",
+  "Winger",
+  "Second Striker",
+  "Centre-Forward"
 ];
 
 const RegisterForm = () => {
@@ -31,8 +46,33 @@ const RegisterForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [position, setPosition] = useState('');
+  const [age, setAge] = useState('');
+  const [clubName, setClubName] = useState('');
+  const [league, setLeague] = useState('');
+  const [role, setRole] = useState('');
+  const [experience, setExperience] = useState('');
+  const [license, setLicense] = useState('');
+  const [company, setCompany] = useState('');
+  const [services, setServices] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState('');
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Reset form fields when user type changes
+  useEffect(() => {
+    setPosition('');
+    setAge('');
+    setClubName('');
+    setLeague('');
+    setRole('');
+    setExperience('');
+    setLicense('');
+    setCompany('');
+    setServices('');
+  }, [userType]);
 
   // Get dynamic fields based on user type
   const getDynamicFields = () => {
@@ -42,11 +82,18 @@ const RegisterForm = () => {
           <>
             <div className="space-y-2">
               <Label htmlFor="position">Playing Position</Label>
-              <Input 
-                id="position" 
-                placeholder="e.g., Striker, Midfielder, Goalkeeper" 
-                disabled={isLoading}
-              />
+              <Select value={position} onValueChange={setPosition} required>
+                <SelectTrigger id="position" disabled={isLoading}>
+                  <SelectValue placeholder="Select your position" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {playerPositions.map((pos) => (
+                    <SelectItem key={pos} value={pos}>
+                      {pos}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="age">Age</Label>
@@ -55,6 +102,9 @@ const RegisterForm = () => {
                 type="number" 
                 placeholder="Your age" 
                 disabled={isLoading}
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                required
               />
             </div>
           </>
@@ -68,6 +118,9 @@ const RegisterForm = () => {
                 id="club-name" 
                 placeholder="Official club name" 
                 disabled={isLoading}
+                value={clubName}
+                onChange={(e) => setClubName(e.target.value)}
+                required
               />
             </div>
             <div className="space-y-2">
@@ -76,19 +129,25 @@ const RegisterForm = () => {
                 id="league" 
                 placeholder="e.g., Premier League, La Liga" 
                 disabled={isLoading}
+                value={league}
+                onChange={(e) => setLeague(e.target.value)}
+                required
               />
             </div>
           </>
         );
-      case 'manager':
+      case 'coach':
         return (
           <>
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">Coaching Role</Label>
               <Input 
                 id="role" 
                 placeholder="e.g., Head Coach, Assistant Coach, Analyst" 
                 disabled={isLoading}
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                required
               />
             </div>
             <div className="space-y-2">
@@ -98,13 +157,14 @@ const RegisterForm = () => {
                 type="number" 
                 placeholder="Years of experience" 
                 disabled={isLoading}
+                value={experience}
+                onChange={(e) => setExperience(e.target.value)}
+                required
               />
             </div>
           </>
         );
-      // Additional cases for other user types
-      case 'player_agent':
-      case 'recruiting_agent':
+      case 'agent':
         return (
           <div className="space-y-2">
             <Label htmlFor="license">License Number/ID</Label>
@@ -112,16 +172,13 @@ const RegisterForm = () => {
               id="license" 
               placeholder="Your official license number" 
               disabled={isLoading}
+              value={license}
+              onChange={(e) => setLicense(e.target.value)}
+              required
             />
           </div>
         );
-      case 'service_provider':
-      case 'sport_management':
-      case 'communication':
-      case 'fitness_club':
       case 'equipment_supplier':
-      case 'clothing_brand':
-      case 'travel_agency':
       case 'sponsor':
         return (
           <>
@@ -131,20 +188,38 @@ const RegisterForm = () => {
                 id="company" 
                 placeholder="Your company name" 
                 disabled={isLoading}
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="services">Services Offered</Label>
+              <Label htmlFor="services">Services/Products Offered</Label>
               <Input 
                 id="services" 
-                placeholder="Brief description of services" 
+                placeholder="Brief description of services or products" 
                 disabled={isLoading}
+                value={services}
+                onChange={(e) => setServices(e.target.value)}
+                required
               />
             </div>
           </>
         );
       default:
         return null;
+    }
+  };
+
+  // Handle avatar upload
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -160,6 +235,16 @@ const RegisterForm = () => {
       });
       return;
     }
+
+    // Validate terms agreement
+    if (!agreeTerms) {
+      toast({
+        title: "Terms and Conditions",
+        description: "You must agree to the terms and conditions to register.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsLoading(true);
     
@@ -168,13 +253,24 @@ const RegisterForm = () => {
       // Fake API delay
       await new Promise((resolve) => setTimeout(resolve, 1500));
       
+      // Store user info in localStorage for demo purposes
+      const userData = {
+        userType,
+        fullName,
+        email,
+        avatar: avatarPreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`,
+        isLoggedIn: true
+      };
+      
+      localStorage.setItem('userData', JSON.stringify(userData));
+      
       toast({
         title: "Account created",
         description: "We've created your account successfully.",
       });
       
-      // Redirect to login would happen here
-      // navigate('/login');
+      // Redirect to dashboard
+      navigate('/dashboard');
     } catch (error) {
       toast({
         title: "Registration failed",
@@ -194,13 +290,38 @@ const RegisterForm = () => {
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Avatar upload */}
+        <div className="flex flex-col items-center justify-center gap-2">
+          <div className="relative">
+            <Avatar className="h-24 w-24 border-2 border-border">
+              {avatarPreview ? (
+                <AvatarImage src={avatarPreview} alt="Profile" />
+              ) : (
+                <AvatarFallback>{fullName ? fullName.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
+              )}
+            </Avatar>
+            <label htmlFor="avatar-upload" className="absolute -bottom-2 -right-2 rounded-full bg-primary p-2 text-white cursor-pointer">
+              <Upload size={16} />
+              <input 
+                id="avatar-upload" 
+                type="file" 
+                className="hidden" 
+                accept="image/*"
+                onChange={handleAvatarChange}
+                disabled={isLoading}
+              />
+            </label>
+          </div>
+          <p className="text-xs text-gray-500">Add a profile picture</p>
+        </div>
+        
         <div className="space-y-2">
           <Label htmlFor="user-type">I am a</Label>
           <Select value={userType} onValueChange={setUserType} required>
             <SelectTrigger id="user-type" disabled={isLoading}>
               <SelectValue placeholder="Select user type" />
             </SelectTrigger>
-            <SelectContent className="max-h-[300px]">
+            <SelectContent>
               {userTypes.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
@@ -236,7 +357,7 @@ const RegisterForm = () => {
         </div>
         
         {/* Dynamic fields based on user type */}
-        {getDynamicFields()}
+        {userType && getDynamicFields()}
         
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
@@ -265,6 +386,30 @@ const RegisterForm = () => {
           </p>
         </div>
         
+        {/* Terms and conditions checkbox */}
+        <div className="flex items-start space-x-2 pt-2">
+          <Checkbox 
+            id="terms" 
+            checked={agreeTerms} 
+            onCheckedChange={(checked) => setAgreeTerms(checked === true)} 
+            disabled={isLoading}
+          />
+          <div className="grid gap-1.5 leading-none">
+            <label
+              htmlFor="terms"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              I agree to the terms and conditions
+            </label>
+            <p className="text-xs text-muted-foreground">
+              By creating an account, you agree to our{' '}
+              <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>{' '}
+              and{' '}
+              <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+            </p>
+          </div>
+        </div>
+        
         <Button type="submit" className="w-full" disabled={isLoading || !userType}>
           {isLoading ? (
             <>
@@ -283,13 +428,6 @@ const RegisterForm = () => {
           Sign in
         </Link>
       </div>
-      
-      <p className="text-xs text-center text-gray-500">
-        By creating an account, you agree to our{' '}
-        <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>{' '}
-        and{' '}
-        <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
-      </p>
     </div>
   );
 };
