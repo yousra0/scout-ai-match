@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User, ChevronDown } from 'lucide-react';
+import { Menu, X, User, ChevronDown, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -12,37 +12,53 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface UserData {
-  userType: string;
-  fullName: string;
-  email: string;
-  avatar: string;
-  isLoggedIn: boolean;
-}
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const { user, profile, logout } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    // Check for user data in localStorage
-    const storedUserData = localStorage.getItem('userData');
-    if (storedUserData) {
-      try {
-        const parsedUserData = JSON.parse(storedUserData);
-        setUserData(parsedUserData);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-      }
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account.",
+      });
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout failed",
+        description: "There was a problem logging out.",
+        variant: "destructive",
+      });
     }
-  }, []);
+  };
 
-  const handleLogout = () => {
-    localStorage.removeItem('userData');
-    setUserData(null);
-    // In a real app, you would also call an API to invalidate the session
-    window.location.href = '/';
+  const getProfilePath = () => {
+    if (!profile) return '/';
+    
+    switch (profile.user_type) {
+      case 'player':
+        return `/players/${user?.id}`;
+      case 'coach':
+        return `/coaches/${user?.id}`;
+      case 'club':
+        return `/clubs/${user?.id}`;
+      case 'agent':
+        return `/agents/${user?.id}`;
+      case 'sponsor':
+        return `/sponsors/${user?.id}`;
+      case 'equipment_supplier':
+        return `/equipment-suppliers/${user?.id}`;
+      default:
+        return '/';
+    }
   };
 
   return (
@@ -65,23 +81,23 @@ const Header = () => {
             <Link to="/clubs" className="text-foreground/80 hover:text-primary transition-colors">
               Clubs
             </Link>
+            <Link to="/discover" className="text-foreground/80 hover:text-primary transition-colors">
+              Discover
+            </Link>
             <Link to="/about" className="text-foreground/80 hover:text-primary transition-colors">
               How It Works
-            </Link>
-            <Link to="/pricing" className="text-foreground/80 hover:text-primary transition-colors">
-              Pricing
             </Link>
           </nav>
 
           {/* Auth Buttons (Desktop) */}
           <div className="hidden md:flex items-center space-x-4">
-            {userData?.isLoggedIn ? (
+            {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 border border-border">
-                      <AvatarImage src={userData.avatar} alt={userData.fullName} />
-                      <AvatarFallback>{userData.fullName.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || 'User'} />
+                      <AvatarFallback>{profile?.full_name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                     <span className="sr-only">User menu</span>
                   </Button>
@@ -89,25 +105,26 @@ const Header = () => {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{userData.fullName}</p>
+                      <p className="text-sm font-medium leading-none">{profile?.full_name || 'User'}</p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {userData.email}
+                        {user.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Link to="/dashboard" className="flex w-full">Dashboard</Link>
+                  <DropdownMenuItem asChild>
+                    <Link to={getProfilePath()} className="cursor-pointer w-full">Profile</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link to={`/players/${userData.userType === 'player' ? '1' : 'profile'}`} className="flex w-full">Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link to="/settings" className="flex w-full">Settings</Link>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="cursor-pointer w-full">Settings</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-500 hover:text-red-600 focus:text-red-500">
-                    Log out
+                  <DropdownMenuItem 
+                    onClick={handleLogout} 
+                    className="cursor-pointer text-red-500 hover:text-red-600 focus:text-red-500"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -155,40 +172,41 @@ const Header = () => {
               Clubs
             </Link>
             <Link 
+              to="/discover" 
+              className="block py-2 text-foreground/80 hover:text-primary"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Discover
+            </Link>
+            <Link 
               to="/about" 
               className="block py-2 text-foreground/80 hover:text-primary"
               onClick={() => setIsMenuOpen(false)}
             >
               How It Works
             </Link>
-            <Link 
-              to="/pricing" 
-              className="block py-2 text-foreground/80 hover:text-primary"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Pricing
-            </Link>
             
             <div className="pt-4 border-t border-border">
-              {userData?.isLoggedIn ? (
+              {user ? (
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={userData.avatar} alt={userData.fullName} />
-                      <AvatarFallback>{userData.fullName.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || 'User'} />
+                      <AvatarFallback>{profile?.full_name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-medium">{userData.fullName}</p>
-                      <p className="text-xs text-muted-foreground">{userData.email}</p>
+                      <p className="text-sm font-medium">{profile?.full_name || 'User'}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
                   </div>
-                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="block w-full">
-                    <Button variant="outline" className="w-full justify-start">Dashboard</Button>
-                  </Link>
-                  <Link to={`/players/${userData.userType === 'player' ? '1' : 'profile'}`} onClick={() => setIsMenuOpen(false)} className="block w-full">
+                  <Link to={getProfilePath()} onClick={() => setIsMenuOpen(false)} className="block w-full">
                     <Button variant="outline" className="w-full justify-start">Profile</Button>
                   </Link>
+                  <Link to="/settings" onClick={() => setIsMenuOpen(false)} className="block w-full">
+                    <Button variant="outline" className="w-full justify-start">Settings</Button>
+                  </Link>
                   <Button onClick={handleLogout} variant="outline" className="w-full justify-start text-red-500 hover:text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />
                     Log out
                   </Button>
                 </div>

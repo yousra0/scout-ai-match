@@ -46,10 +46,10 @@ const AppRoutes = () => (
         </ProtectedRoute>
       } 
     />
-    <Route 
-      path="/players/:id" 
-      element={<PlayerProfilePage />} 
-    />
+    
+    {/* Player Profile - No longer protected, can be viewed by anyone */}
+    <Route path="/players/:id" element={<PlayerProfilePage />} />
+    
     <Route 
       path="/discover" 
       element={
@@ -72,6 +72,9 @@ const AppRoutes = () => (
     <Route path="/managers/:id" element={<StakeholderProfilePage />} />
     <Route path="/agents/:id" element={<StakeholderProfilePage />} />
     <Route path="/services/:id" element={<StakeholderProfilePage />} />
+    <Route path="/coaches/:id" element={<StakeholderProfilePage />} />
+    <Route path="/sponsors/:id" element={<StakeholderProfilePage />} />
+    <Route path="/equipment-suppliers/:id" element={<StakeholderProfilePage />} />
     <Route path="/:type/:id" element={<StakeholderProfilePage />} />
     
     <Route path="*" element={<NotFound />} />

@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
@@ -26,6 +27,7 @@ const PlayerProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [playerProfile, setPlayerProfile] = useState<any>(null);
   const [playerMedia, setPlayerMedia] = useState<any[]>([]);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     const fetchPlayerData = async () => {
@@ -44,24 +46,24 @@ const PlayerProfilePage = () => {
         if (profileError) {
           if (profileError.code === 'PGRST116') {
             // Record not found
+            setNotFound(true);
             toast({
               title: "Player not found",
               description: "The player profile you're looking for doesn't exist.",
               variant: "destructive"
             });
-            navigate('/dashboard');
             return;
           }
           throw profileError;
         }
         
         if (!profileData || profileData.user_type !== 'player') {
+          setNotFound(true);
           toast({
             title: "Not a player profile",
             description: "This profile doesn't belong to a player.",
             variant: "destructive"
           });
-          navigate('/dashboard');
           return;
         }
         
@@ -103,6 +105,7 @@ const PlayerProfilePage = () => {
           description: "There was a problem loading this player's profile.",
           variant: "destructive"
         });
+        setNotFound(true);
       } finally {
         setIsLoading(false);
       }
@@ -117,6 +120,19 @@ const PlayerProfilePage = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
         <p className="text-gray-600">Loading player profile...</p>
+      </div>
+    );
+  }
+
+  // If not found, show not found message
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <div className="text-xl font-semibold mb-2">Player Not Found</div>
+        <p className="text-gray-600 mb-6">The player profile you're looking for doesn't exist or you don't have permission to view it.</p>
+        <Button onClick={() => navigate('/')} variant="default">
+          Go Home
+        </Button>
       </div>
     );
   }
@@ -217,8 +233,10 @@ const PlayerProfilePage = () => {
                       {/* Highlights Tab */}
                       <TabsContent value="highlights">
                         <PlayerHighlights 
-                          highlights={videos.length > 0 ? videos : playerData.highlights} 
-                          photos={photos.length > 0 ? photos : []}
+                          mediaItems={videos.length > 0 ? videos : playerData.highlights} 
+                          photoItems={photos.length > 0 ? photos : []} 
+                          isCurrentUserProfile={user?.id === id}
+                          playerId={id || ''}
                         />
                       </TabsContent>
                       

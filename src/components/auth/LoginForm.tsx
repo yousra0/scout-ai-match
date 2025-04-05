@@ -45,8 +45,8 @@ const LoginForm = () => {
           description: "Welcome back!",
         });
         
-        // Navigate to dashboard after successful login
-        navigate('/dashboard');
+        // Navigate to home page after successful login instead of dashboard
+        navigate('/');
       }
     } catch (error: any) {
       console.error('Login error:', error);
