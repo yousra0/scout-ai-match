@@ -4,10 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { Database } from '@/integrations/supabase/types';
 
+type ProfileType = Database['public']['Tables']['profiles']['Row'];
+type PlayerDetailsType = Database['public']['Tables']['player_details']['Row'];
+type StakeholderDetailsType = Database['public']['Tables']['stakeholder_details']['Row'];
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  profile: any | null;
+  profile: (ProfileType & Partial<PlayerDetailsType> & Partial<StakeholderDetailsType>) | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -18,7 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<(ProfileType & Partial<PlayerDetailsType> & Partial<StakeholderDetailsType>) | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -74,10 +78,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (data) {
-        setProfile(data);
+        const profileData = data as ProfileType;
+        setProfile(profileData);
         
         // If user is a player, fetch player details
-        if (data.user_type === 'player') {
+        if (profileData.user_type === 'player') {
           const { data: playerData, error: playerError } = await supabase
             .from('player_details')
             .select('*')

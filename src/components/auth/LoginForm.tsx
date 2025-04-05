@@ -1,43 +1,58 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Missing information",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
-    // Here we would integrate with the backend API
-    // Simulating API call for demo purposes
     try {
-      // Fake API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
-      // In a real app, store the token in localStorage/sessionStorage
-      // and update authentication context
-      // localStorage.setItem('token', response.token);
-      
-      toast({
-        title: "Success",
-        description: "You've been logged in successfully.",
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
       
-      // Redirect to dashboard would happen here
-      // navigate('/dashboard');
-    } catch (error) {
+      if (error) throw error;
+      
+      if (data.user) {
+        toast({
+          title: "Logged in successfully",
+          description: "Welcome back!",
+        });
+        
+        // Navigate to dashboard after successful login
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: error.message || "There was a problem with your login.",
         variant: "destructive",
       });
     } finally {
@@ -65,6 +80,7 @@ const LoginForm = () => {
             disabled={isLoading}
           />
         </div>
+        
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
@@ -82,6 +98,21 @@ const LoginForm = () => {
           />
         </div>
         
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="remember" 
+            checked={rememberMe} 
+            onCheckedChange={(checked) => setRememberMe(checked === true)}
+            disabled={isLoading}
+          />
+          <label
+            htmlFor="remember"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Remember me
+          </label>
+        </div>
+        
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? (
             <>
@@ -89,7 +120,7 @@ const LoginForm = () => {
               Signing in...
             </>
           ) : (
-            'Sign In'
+            'Sign in'
           )}
         </Button>
       </form>
