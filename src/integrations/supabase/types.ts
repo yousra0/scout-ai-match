@@ -9,6 +9,159 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agent_details: {
+        Row: {
+          agency: string | null
+          clients_count: number | null
+          created_at: string | null
+          experience_years: number | null
+          id: string
+          languages: string | null
+          license_number: string | null
+          regions_of_operation: string | null
+          specialization: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agency?: string | null
+          clients_count?: number | null
+          created_at?: string | null
+          experience_years?: number | null
+          id: string
+          languages?: string | null
+          license_number?: string | null
+          regions_of_operation?: string | null
+          specialization?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agency?: string | null
+          clients_count?: number | null
+          created_at?: string | null
+          experience_years?: number | null
+          id?: string
+          languages?: string | null
+          license_number?: string | null
+          regions_of_operation?: string | null
+          specialization?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      club_details: {
+        Row: {
+          achievements: string | null
+          city: string | null
+          club_colors: string | null
+          country: string | null
+          created_at: string | null
+          founded_year: number | null
+          id: string
+          league: string | null
+          stadium: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          achievements?: string | null
+          city?: string | null
+          club_colors?: string | null
+          country?: string | null
+          created_at?: string | null
+          founded_year?: number | null
+          id: string
+          league?: string | null
+          stadium?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          achievements?: string | null
+          city?: string | null
+          club_colors?: string | null
+          country?: string | null
+          created_at?: string | null
+          founded_year?: number | null
+          id?: string
+          league?: string | null
+          stadium?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      coach_details: {
+        Row: {
+          achievements: string | null
+          certifications: string | null
+          coaching_philosophy: string | null
+          created_at: string | null
+          current_club: string | null
+          experience: string | null
+          id: string
+          specialization: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          achievements?: string | null
+          certifications?: string | null
+          coaching_philosophy?: string | null
+          created_at?: string | null
+          current_club?: string | null
+          experience?: string | null
+          id: string
+          specialization?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          achievements?: string | null
+          certifications?: string | null
+          coaching_philosophy?: string | null
+          created_at?: string | null
+          current_club?: string | null
+          experience?: string | null
+          id?: string
+          specialization?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      equipment_supplier_details: {
+        Row: {
+          company: string | null
+          created_at: string | null
+          id: string
+          products: string | null
+          regions_served: string | null
+          specialization: string | null
+          updated_at: string | null
+          website: string | null
+          year_established: number | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string | null
+          id: string
+          products?: string | null
+          regions_served?: string | null
+          specialization?: string | null
+          updated_at?: string | null
+          website?: string | null
+          year_established?: number | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string | null
+          id?: string
+          products?: string | null
+          regions_served?: string | null
+          specialization?: string | null
+          updated_at?: string | null
+          website?: string | null
+          year_established?: number | null
+        }
+        Relationships: []
+      }
       player_details: {
         Row: {
           age: number | null
@@ -109,40 +262,41 @@ export type Database = {
         }
         Relationships: []
       }
-      stakeholder_details: {
+      sponsor_details: {
         Row: {
+          budget_range: string | null
           company: string | null
-          experience: string | null
+          created_at: string | null
           id: string
-          license: string | null
-          role: string | null
-          services: string | null
+          industry: string | null
+          previous_sponsorships: string | null
+          sponsorship_focus: string | null
+          updated_at: string | null
+          website: string | null
         }
         Insert: {
+          budget_range?: string | null
           company?: string | null
-          experience?: string | null
+          created_at?: string | null
           id: string
-          license?: string | null
-          role?: string | null
-          services?: string | null
+          industry?: string | null
+          previous_sponsorships?: string | null
+          sponsorship_focus?: string | null
+          updated_at?: string | null
+          website?: string | null
         }
         Update: {
+          budget_range?: string | null
           company?: string | null
-          experience?: string | null
+          created_at?: string | null
           id?: string
-          license?: string | null
-          role?: string | null
-          services?: string | null
+          industry?: string | null
+          previous_sponsorships?: string | null
+          sponsorship_focus?: string | null
+          updated_at?: string | null
+          website?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "stakeholder_details_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
