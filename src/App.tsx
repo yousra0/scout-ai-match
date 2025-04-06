@@ -12,6 +12,9 @@ import DashboardPage from "./pages/DashboardPage";
 import PlayerProfilePage from "./pages/PlayerProfilePage";
 import ScoutingPage from "./pages/ScoutingPage";
 import StakeholderProfilePage from "./pages/StakeholderProfilePage";
+import MatchingPage from "./pages/MatchingPage";
+import RecommendationsPage from "./pages/RecommendationsPage";
+import OpportunitiesPage from "./pages/OpportunitiesPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -37,11 +40,11 @@ const AppRoutes = () => (
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />
     
-    {/* New Pages */}
+    {/* Main Navigation Pages */}
     <Route path="/explore" element={<ScoutingPage />} />
-    <Route path="/matching" element={<DashboardPage />} />
-    <Route path="/recommendations" element={<DashboardPage />} />
-    <Route path="/opportunities" element={<DashboardPage />} />
+    <Route path="/matching" element={<MatchingPage />} />
+    <Route path="/recommendations" element={<RecommendationsPage />} />
+    <Route path="/opportunities" element={<OpportunitiesPage />} />
     <Route path="/messaging" element={
       <ProtectedRoute>
         <DashboardPage />
