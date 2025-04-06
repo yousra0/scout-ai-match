@@ -115,7 +115,7 @@ const MessagingInterface = () => {
       // Get the most recent message for each conversation using the RPC function
       const { data, error } = await supabase
         .rpc('get_user_conversations', { 
-          user_id: user.id
+          input_user_id: user.id
         });
         
       if (error) throw error;

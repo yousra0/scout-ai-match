@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import MessagingInterface from '@/components/messaging/MessagingInterface';
