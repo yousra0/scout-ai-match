@@ -197,6 +197,53 @@ export type Database = {
           },
         ]
       }
+      player_experience: {
+        Row: {
+          achievements: string | null
+          club: string
+          created_at: string
+          end_date: string | null
+          id: string
+          is_current_role: boolean | null
+          player_id: string
+          role: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          achievements?: string | null
+          club: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_current_role?: boolean | null
+          player_id: string
+          role: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          achievements?: string | null
+          club?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_current_role?: boolean | null
+          player_id?: string
+          role?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_experience_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_media: {
         Row: {
           created_at: string

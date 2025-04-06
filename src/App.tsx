@@ -37,6 +37,17 @@ const AppRoutes = () => (
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />
     
+    {/* New Pages */}
+    <Route path="/explore" element={<ScoutingPage />} />
+    <Route path="/matching" element={<DashboardPage />} />
+    <Route path="/recommendations" element={<DashboardPage />} />
+    <Route path="/opportunities" element={<DashboardPage />} />
+    <Route path="/messaging" element={
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    } />
+    
     {/* Protected Routes */}
     <Route 
       path="/dashboard" 
@@ -55,14 +66,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <ScoutingPage />
-        </ProtectedRoute>
-      } 
-    />
-    <Route 
-      path="/opportunities" 
-      element={
-        <ProtectedRoute>
-          <DashboardPage />
         </ProtectedRoute>
       } 
     />

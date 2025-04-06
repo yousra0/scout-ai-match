@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User, ChevronDown, LogOut } from 'lucide-react';
+import { Menu, X, User, ChevronDown, LogOut, Filter, Compass, Star, MessageSquare, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -75,18 +75,28 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/players" className="text-foreground/80 hover:text-primary transition-colors">
-              Players
+            <Link to="/explore" className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1">
+              <Filter size={16} />
+              <span>Explore</span>
             </Link>
-            <Link to="/clubs" className="text-foreground/80 hover:text-primary transition-colors">
-              Clubs
+            <Link to="/matching" className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1">
+              <Compass size={16} />
+              <span>Matching</span>
             </Link>
-            <Link to="/discover" className="text-foreground/80 hover:text-primary transition-colors">
-              Discover
+            <Link to="/recommendations" className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1">
+              <Star size={16} />
+              <span>Recommendations</span>
             </Link>
-            <Link to="/about" className="text-foreground/80 hover:text-primary transition-colors">
-              How It Works
+            <Link to="/opportunities" className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1">
+              <Users size={16} />
+              <span>Opportunities</span>
             </Link>
+            {user && (
+              <Link to="/messaging" className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1">
+                <MessageSquare size={16} />
+                <span>Messaging</span>
+              </Link>
+            )}
           </nav>
 
           {/* Auth Buttons (Desktop) */}
@@ -158,33 +168,47 @@ const Header = () => {
         <div className="md:hidden bg-white border-t border-border">
           <div className="container mx-auto px-4 py-4 space-y-4">
             <Link 
-              to="/players" 
-              className="block py-2 text-foreground/80 hover:text-primary"
+              to="/explore" 
+              className="flex items-center space-x-2 py-2 text-foreground/80 hover:text-primary"
               onClick={() => setIsMenuOpen(false)}
             >
-              Players
+              <Filter size={18} />
+              <span>Explore</span>
             </Link>
             <Link 
-              to="/clubs" 
-              className="block py-2 text-foreground/80 hover:text-primary"
+              to="/matching" 
+              className="flex items-center space-x-2 py-2 text-foreground/80 hover:text-primary"
               onClick={() => setIsMenuOpen(false)}
             >
-              Clubs
+              <Compass size={18} />
+              <span>Matching</span>
             </Link>
             <Link 
-              to="/discover" 
-              className="block py-2 text-foreground/80 hover:text-primary"
+              to="/recommendations" 
+              className="flex items-center space-x-2 py-2 text-foreground/80 hover:text-primary"
               onClick={() => setIsMenuOpen(false)}
             >
-              Discover
+              <Star size={18} />
+              <span>Recommendations</span>
             </Link>
             <Link 
-              to="/about" 
-              className="block py-2 text-foreground/80 hover:text-primary"
+              to="/opportunities" 
+              className="flex items-center space-x-2 py-2 text-foreground/80 hover:text-primary"
               onClick={() => setIsMenuOpen(false)}
             >
-              How It Works
+              <Users size={18} />
+              <span>Opportunities</span>
             </Link>
+            {user && (
+              <Link 
+                to="/messaging" 
+                className="flex items-center space-x-2 py-2 text-foreground/80 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <MessageSquare size={18} />
+                <span>Messaging</span>
+              </Link>
+            )}
             
             <div className="pt-4 border-t border-border">
               {user ? (
