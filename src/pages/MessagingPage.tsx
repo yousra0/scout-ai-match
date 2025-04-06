@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import MessagingInterface from '@/components/messaging/MessagingInterface';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
 const MessagingPage = () => {
   const { user, isLoading } = useAuth();
@@ -13,7 +14,8 @@ const MessagingPage = () => {
       <Layout>
         <div className="container mx-auto py-6">
           <div className="flex items-center justify-center min-h-[50vh]">
-            <p>Loading...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-2">Loading...</p>
           </div>
         </div>
       </Layout>

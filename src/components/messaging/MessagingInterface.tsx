@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,6 +20,7 @@ interface Message {
   content: string;
   created_at: string;
   is_read: boolean;
+  updated_at: string;
   sender?: {
     full_name: string;
     avatar_url: string;
@@ -120,7 +122,7 @@ const MessagingInterface = () => {
       if (error) throw error;
       
       if (data) {
-        // The data matches our updated Conversation interface now
+        // Cast the data to our Conversation interface
         setConversations(data as Conversation[]);
       }
     } catch (error) {
@@ -163,7 +165,9 @@ const MessagingInterface = () => {
         .eq('receiver_id', user.id)
         .eq('is_read', false);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error marking messages as read:', updateError);
+      }
       
       // Get messages between current user and recipient
       const { data, error } = await supabase
@@ -175,18 +179,26 @@ const MessagingInterface = () => {
       if (error) throw error;
       
       if (data) {
-        // Handle missing sender profile data for now
+        // Handle missing sender profile data
         const processedMessages = data.map(msg => {
-          // Create a basic sender object for each message based on known user IDs
+          // Get sender name and avatar from either user profile or conversations list
+          const senderName = msg.sender_id === user.id 
+            ? profile?.full_name || 'You' 
+            : conversations.find(c => c.other_user_id === msg.sender_id)?.full_name || 'User';
+          
+          const senderAvatar = msg.sender_id === user.id 
+            ? profile?.avatar_url || '' 
+            : conversations.find(c => c.other_user_id === msg.sender_id)?.avatar_url || '';
+          
+          // Create a properly typed message with sender info
           const enhancedMsg: Message = {
             ...msg as Message,
             sender: {
-              full_name: msg.sender_id === user.id ? profile?.full_name || 'You' : 
-                         conversations.find(c => c.other_user_id === msg.sender_id)?.full_name || 'User',
-              avatar_url: msg.sender_id === user.id ? profile?.avatar_url || '' : 
-                         conversations.find(c => c.other_user_id === msg.sender_id)?.avatar_url || ''
+              full_name: senderName,
+              avatar_url: senderAvatar
             }
           };
+          
           return enhancedMsg;
         });
         
@@ -208,19 +220,21 @@ const MessagingInterface = () => {
     if (!user || !currentConversation || !newMessage.trim()) return;
     
     try {
+      const messageData = {
+        sender_id: user.id,
+        receiver_id: currentConversation,
+        content: newMessage.trim(),
+        is_read: false
+      };
+      
       const { data, error } = await supabase
         .from('messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: currentConversation,
-          content: newMessage.trim(),
-          is_read: false,
-        })
+        .insert(messageData)
         .select();
         
       if (error) throw error;
       
-      if (data) {
+      if (data && data[0]) {
         // Add sender profile info to the new message
         const newMsg: Message = {
           ...data[0] as Message,
@@ -249,13 +263,15 @@ const MessagingInterface = () => {
 
   // Filter conversations based on search term and active tab
   const filteredConversations = conversations.filter(conv => {
-    if (searchTerm) {
-      return conv.full_name.toLowerCase().includes(searchTerm.toLowerCase());
-    }
-    if (activeTab === 'unread') {
-      return conv.unread_count > 0;
-    }
-    return true;
+    const matchesSearch = searchTerm ? 
+      conv.full_name.toLowerCase().includes(searchTerm.toLowerCase()) : 
+      true;
+      
+    const matchesTab = activeTab === 'unread' ? 
+      conv.unread_count > 0 : 
+      true;
+      
+    return matchesSearch && matchesTab;
   });
 
   return (
