@@ -178,7 +178,7 @@ const MessagingInterface = () => {
       if (error) throw error;
       
       if (data) {
-        setMessages(data);
+        setMessages(data as Message[]);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
