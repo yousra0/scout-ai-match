@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,7 @@ const MessagingInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversations on component mount
   useEffect(() => {
@@ -65,6 +66,15 @@ const MessagingInterface = () => {
     }
   }, [currentConversation]);
 
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   // Set up real-time subscription for new messages
   useEffect(() => {
     if (!user) return;
@@ -78,9 +88,12 @@ const MessagingInterface = () => {
         table: 'messages',
         filter: `receiver_id=eq.${user.id}`,
       }, (payload) => {
+        const newMessage = payload.new as Message;
+        
         // Add new message to the messages list if it's in the current conversation
-        if (payload.new.sender_id === currentConversation) {
-          setMessages(prev => [...prev, payload.new as Message]);
+        if (newMessage.sender_id === currentConversation) {
+          setMessages(prev => [...prev, newMessage]);
+          markMessageAsRead(newMessage.id);
         }
         
         // Update conversations list
@@ -99,7 +112,7 @@ const MessagingInterface = () => {
     try {
       setIsLoading(true);
       
-      // Get the most recent message for each conversation
+      // Get the most recent message for each conversation using the RPC function
       const { data, error } = await supabase
         .rpc('get_user_conversations', { 
           user_id: user.id
@@ -122,6 +135,20 @@ const MessagingInterface = () => {
     }
   };
 
+  const markMessageAsRead = async (messageId: string) => {
+    if (!user) return;
+    
+    try {
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('id', messageId)
+        .eq('receiver_id', user.id);
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+    }
+  };
+
   const fetchMessages = async (recipientId: string) => {
     if (!user) return;
     
@@ -129,12 +156,14 @@ const MessagingInterface = () => {
       setIsLoading(true);
       
       // Mark messages as read
-      await supabase
+      const { error: updateError } = await supabase
         .from('messages')
         .update({ is_read: true })
         .eq('sender_id', recipientId)
         .eq('receiver_id', user.id)
         .eq('is_read', false);
+      
+      if (updateError) throw updateError;
       
       // Get messages between current user and recipient
       const { data, error } = await supabase
@@ -149,7 +178,7 @@ const MessagingInterface = () => {
       if (error) throw error;
       
       if (data) {
-        setMessages(data as Message[]);
+        setMessages(data);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -175,14 +204,13 @@ const MessagingInterface = () => {
           content: newMessage.trim(),
           is_read: false,
         })
-        .select()
-        .single();
+        .select();
         
       if (error) throw error;
       
       if (data) {
         // Add to messages list
-        setMessages(prev => [...prev, data as Message]);
+        setMessages(prev => [...prev, data[0] as Message]);
         setNewMessage('');
         
         // Update conversations list
@@ -359,6 +387,7 @@ const MessagingInterface = () => {
                       </div>
                     ))
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
               

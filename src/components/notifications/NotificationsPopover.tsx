@@ -79,7 +79,7 @@ const NotificationsPopover = () => {
       if (error) throw error;
       
       if (data) {
-        setNotifications(data);
+        setNotifications(data as Notification[]);
         setUnreadCount(data.filter(n => !n.is_read).length);
       }
     } catch (error) {
