@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User, ChevronDown, LogOut, Filter, Compass, Star, MessageSquare, Users } from 'lucide-react';
+import { Menu, X, User, LogOut, Filter, Compass, Star, MessageSquare, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -13,14 +13,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import NotificationsPopover from '../notifications/NotificationsPopover';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -61,6 +67,13 @@ const Header = () => {
     }
   };
 
+  const navLinks = [
+    { to: "/explore", icon: Filter, label: "Explore" },
+    { to: "/matching", icon: Compass, label: "Matching" },
+    { to: "/recommendations", icon: Star, label: "Recommendations" },
+    { to: "/opportunities", icon: Users, label: "Opportunities" },
+  ];
+
   return (
     <header className="bg-white border-b border-border sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -75,69 +88,69 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/explore" className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1">
-              <Filter size={16} />
-              <span>Explore</span>
-            </Link>
-            <Link to="/matching" className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1">
-              <Compass size={16} />
-              <span>Matching</span>
-            </Link>
-            <Link to="/recommendations" className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1">
-              <Star size={16} />
-              <span>Recommendations</span>
-            </Link>
-            <Link to="/opportunities" className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1">
-              <Users size={16} />
-              <span>Opportunities</span>
-            </Link>
-            {user && (
-              <Link to="/messaging" className="text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1">
-                <MessageSquare size={16} />
-                <span>Messaging</span>
+            {navLinks.map(({ to, icon: Icon, label }) => (
+              <Link 
+                key={to}
+                to={to} 
+                className={`text-foreground/80 hover:text-primary transition-colors flex items-center space-x-1 ${
+                  location.pathname === to ? 'text-primary font-medium' : ''
+                }`}
+              >
+                <Icon size={16} />
+                <span>{label}</span>
               </Link>
-            )}
+            ))}
           </nav>
 
           {/* Auth Buttons (Desktop) */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2">
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10 border border-border">
-                      <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || 'User'} />
-                      <AvatarFallback>{profile?.full_name?.charAt(0) || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <span className="sr-only">User menu</span>
+              <>
+                <Link to="/messaging" className="mr-1">
+                  <Button variant="ghost" size="icon" className="relative">
+                    <MessageSquare className="h-5 w-5" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{profile?.full_name || 'User'}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to={getProfilePath()} className="cursor-pointer w-full">Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings" className="cursor-pointer w-full">Settings</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={handleLogout} 
-                    className="cursor-pointer text-red-500 hover:text-red-600 focus:text-red-500"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </Link>
+                
+                <NotificationsPopover />
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Avatar className="h-10 w-10 border border-border">
+                        <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || 'User'} />
+                        <AvatarFallback>{profile?.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                      </Avatar>
+                      <span className="sr-only">User menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{profile?.full_name || 'User'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to={getProfilePath()} className="cursor-pointer w-full">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings" className="cursor-pointer w-full">Settings</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={handleLogout} 
+                      className="cursor-pointer text-red-500 hover:text-red-600 focus:text-red-500"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <>
                 <Link to="/login">
@@ -151,7 +164,18 @@ const Header = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            {user && (
+              <>
+                <Link to="/messaging">
+                  <Button variant="ghost" size="icon" className="relative">
+                    <MessageSquare className="h-5 w-5" />
+                  </Button>
+                </Link>
+                
+                <NotificationsPopover />
+              </>
+            )}
             <Button 
               variant="ghost" 
               size="icon"
@@ -167,48 +191,19 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-border">
           <div className="container mx-auto px-4 py-4 space-y-4">
-            <Link 
-              to="/explore" 
-              className="flex items-center space-x-2 py-2 text-foreground/80 hover:text-primary"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Filter size={18} />
-              <span>Explore</span>
-            </Link>
-            <Link 
-              to="/matching" 
-              className="flex items-center space-x-2 py-2 text-foreground/80 hover:text-primary"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Compass size={18} />
-              <span>Matching</span>
-            </Link>
-            <Link 
-              to="/recommendations" 
-              className="flex items-center space-x-2 py-2 text-foreground/80 hover:text-primary"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Star size={18} />
-              <span>Recommendations</span>
-            </Link>
-            <Link 
-              to="/opportunities" 
-              className="flex items-center space-x-2 py-2 text-foreground/80 hover:text-primary"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Users size={18} />
-              <span>Opportunities</span>
-            </Link>
-            {user && (
+            {navLinks.map(({ to, icon: Icon, label }) => (
               <Link 
-                to="/messaging" 
-                className="flex items-center space-x-2 py-2 text-foreground/80 hover:text-primary"
+                key={to}
+                to={to} 
+                className={`flex items-center space-x-2 py-2 ${
+                  location.pathname === to ? 'text-primary font-medium' : 'text-foreground/80 hover:text-primary'
+                }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                <MessageSquare size={18} />
-                <span>Messaging</span>
+                <Icon size={18} />
+                <span>{label}</span>
               </Link>
-            )}
+            ))}
             
             <div className="pt-4 border-t border-border">
               {user ? (

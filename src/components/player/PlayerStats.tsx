@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer } from '@/components/ui/chart';
 import { BarChartIcon, TrendingUp } from 'lucide-react';
-import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Legend } from 'recharts';
+import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Legend, ResponsiveContainer } from 'recharts';
 
 interface PlayerStatsProps {
   stats: {
@@ -34,20 +34,16 @@ const PlayerStats = ({ stats, statsData, recentPerformance }: PlayerStatsProps) 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64">
-            <ChartContainer 
-              config={{
-                stats: { color: "#8B5CF6" }
-              }}
-            >
-              <BarChart data={statsData}>
+          <div className="w-full h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={statsData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="value" fill="#8B5CF6" />
               </BarChart>
-            </ChartContainer>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
@@ -60,14 +56,9 @@ const PlayerStats = ({ stats, statsData, recentPerformance }: PlayerStatsProps) 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64">
-            <ChartContainer 
-              config={{
-                goals: { color: "#8B5CF6" },
-                assists: { color: "#22C55E" }
-              }}
-            >
-              <BarChart data={recentPerformance}>
+          <div className="w-full h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={recentPerformance} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -76,7 +67,7 @@ const PlayerStats = ({ stats, statsData, recentPerformance }: PlayerStatsProps) 
                 <Bar dataKey="goals" fill="#8B5CF6" name="Goals" />
                 <Bar dataKey="assists" fill="#22C55E" name="Assists" />
               </BarChart>
-            </ChartContainer>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>

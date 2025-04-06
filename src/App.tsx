@@ -15,6 +15,7 @@ import StakeholderProfilePage from "./pages/StakeholderProfilePage";
 import MatchingPage from "./pages/MatchingPage";
 import RecommendationsPage from "./pages/RecommendationsPage";
 import OpportunitiesPage from "./pages/OpportunitiesPage";
+import MessagingPage from "./pages/MessagingPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -45,11 +46,9 @@ const AppRoutes = () => (
     <Route path="/matching" element={<MatchingPage />} />
     <Route path="/recommendations" element={<RecommendationsPage />} />
     <Route path="/opportunities" element={<OpportunitiesPage />} />
-    <Route path="/messaging" element={
-      <ProtectedRoute>
-        <DashboardPage />
-      </ProtectedRoute>
-    } />
+    
+    {/* Messaging - Protected */}
+    <Route path="/messaging" element={<MessagingPage />} />
     
     {/* Protected Routes */}
     <Route 
