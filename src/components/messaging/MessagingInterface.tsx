@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -26,10 +25,10 @@ interface Message {
   };
 }
 
-// Define conversation type
+// Define conversation type to match the database return type
 interface Conversation {
   id: string;
-  user_id: string;
+  other_user_id: string;
   full_name: string;
   avatar_url: string;
   last_message: string;
@@ -121,6 +120,7 @@ const MessagingInterface = () => {
       if (error) throw error;
       
       if (data) {
+        // The data matches our updated Conversation interface now
         setConversations(data as Conversation[]);
       }
     } catch (error) {
@@ -168,17 +168,29 @@ const MessagingInterface = () => {
       // Get messages between current user and recipient
       const { data, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          sender:profiles!sender_id(full_name, avatar_url)
-        `)
+        .select(`*`)
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
         
       if (error) throw error;
       
       if (data) {
-        setMessages(data as Message[]);
+        // Handle missing sender profile data for now
+        const processedMessages = data.map(msg => {
+          // Create a basic sender object for each message based on known user IDs
+          const enhancedMsg: Message = {
+            ...msg as Message,
+            sender: {
+              full_name: msg.sender_id === user.id ? profile?.full_name || 'You' : 
+                         conversations.find(c => c.other_user_id === msg.sender_id)?.full_name || 'User',
+              avatar_url: msg.sender_id === user.id ? profile?.avatar_url || '' : 
+                         conversations.find(c => c.other_user_id === msg.sender_id)?.avatar_url || ''
+            }
+          };
+          return enhancedMsg;
+        });
+        
+        setMessages(processedMessages);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -209,8 +221,17 @@ const MessagingInterface = () => {
       if (error) throw error;
       
       if (data) {
+        // Add sender profile info to the new message
+        const newMsg: Message = {
+          ...data[0] as Message,
+          sender: {
+            full_name: profile?.full_name || 'You',
+            avatar_url: profile?.avatar_url || ''
+          }
+        };
+        
         // Add to messages list
-        setMessages(prev => [...prev, data[0] as Message]);
+        setMessages(prev => [...prev, newMsg]);
         setNewMessage('');
         
         // Update conversations list
@@ -226,6 +247,7 @@ const MessagingInterface = () => {
     }
   };
 
+  // Filter conversations based on search term and active tab
   const filteredConversations = conversations.filter(conv => {
     if (searchTerm) {
       return conv.full_name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -268,11 +290,11 @@ const MessagingInterface = () => {
               <div className="divide-y">
                 {filteredConversations.map((conv) => (
                   <div
-                    key={conv.user_id}
+                    key={conv.other_user_id}
                     className={`px-4 py-3 cursor-pointer ${
-                      currentConversation === conv.user_id ? 'bg-primary/10' : 'hover:bg-muted/50'
+                      currentConversation === conv.other_user_id ? 'bg-primary/10' : 'hover:bg-muted/50'
                     }`}
-                    onClick={() => setCurrentConversation(conv.user_id)}
+                    onClick={() => setCurrentConversation(conv.other_user_id)}
                   >
                     <div className="flex items-center space-x-3">
                       <Avatar>
@@ -320,20 +342,20 @@ const MessagingInterface = () => {
             <>
               {/* Chat header */}
               <div className="px-4 py-3 border-b flex items-center">
-                {conversations.find(c => c.user_id === currentConversation) ? (
+                {conversations.find(c => c.other_user_id === currentConversation) ? (
                   <div className="flex items-center space-x-3">
                     <Avatar>
                       <AvatarImage 
-                        src={conversations.find(c => c.user_id === currentConversation)?.avatar_url || ''} 
-                        alt={conversations.find(c => c.user_id === currentConversation)?.full_name} 
+                        src={conversations.find(c => c.other_user_id === currentConversation)?.avatar_url || ''} 
+                        alt={conversations.find(c => c.other_user_id === currentConversation)?.full_name || ''} 
                       />
                       <AvatarFallback>
-                        {(conversations.find(c => c.user_id === currentConversation)?.full_name || '?').charAt(0)}
+                        {(conversations.find(c => c.other_user_id === currentConversation)?.full_name || '?').charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <h3 className="font-medium text-sm">
-                        {conversations.find(c => c.user_id === currentConversation)?.full_name}
+                        {conversations.find(c => c.other_user_id === currentConversation)?.full_name}
                       </h3>
                     </div>
                   </div>
@@ -367,7 +389,7 @@ const MessagingInterface = () => {
                         <div className="flex items-end space-x-2">
                           {message.sender_id !== user?.id && (
                             <Avatar className="h-8 w-8">
-                              <AvatarImage src={message.sender?.avatar_url || ''} alt={message.sender?.full_name} />
+                              <AvatarImage src={message.sender?.avatar_url || ''} alt={message.sender?.full_name || ''} />
                               <AvatarFallback>{message.sender?.full_name?.charAt(0) || '?'}</AvatarFallback>
                             </Avatar>
                           )}
