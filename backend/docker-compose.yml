@@ -11,24 +11,12 @@ services:
     volumes:
       - .:/app
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/scout_ai_match
-      - REDIS_HOST=redis
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-for-jwt}
-    depends_on:
-      - db
-      - redis
+      - SUPABASE_URL=https://hodhzdfxagnvolvpyeai.supabase.co
+      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvZGh6ZGZ4YWdudm9sdnB5ZWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4Nzc2NDUsImV4cCI6MjA1OTQ1MzY0NX0.TZopZVmzws8uVuAfZyonWSlCwjTTjI2rQj7fjlQIhI8
     restart: always
-
-  db:
-    image: postgres:15
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=scout_ai_match
-    ports:
-      - "5432:5432"
+    depends_on:
+      - redis
 
   redis:
     image: redis:7
@@ -37,16 +25,5 @@ services:
     volumes:
       - redis_data:/data
 
-  pgadmin:
-    image: dpage/pgadmin4
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@example.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
-    ports:
-      - "5050:80"
-    depends_on:
-      - db
-
 volumes:
-  postgres_data:
   redis_data:

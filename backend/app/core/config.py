@@ -13,6 +13,7 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:5173",  # For development
         "https://scout-ai-match.com",  # Add your production domain
+        "*",  # Allow all origins during development
     ]
     
     # Authentication
@@ -20,10 +21,12 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     
-    # Database
+    # Database (Supabase)
+    SUPABASE_URL: str = "https://hodhzdfxagnvolvpyeai.supabase.co"
+    SUPABASE_KEY: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvZGh6ZGZ4YWdudm9sdnB5ZWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4Nzc2NDUsImV4cCI6MjA1OTQ1MzY0NX0.TZopZVmzws8uVuAfZyonWSlCwjTTjI2rQj7fjlQIhI8"
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", 
-        "postgresql://postgres:postgres@localhost:5432/scout_ai_match"
+        "postgresql://postgres:postgres@db:5432/scout_ai_match"
     )
     
     # Redis

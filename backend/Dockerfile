@@ -14,5 +14,9 @@ COPY . /app/
 RUN adduser --disabled-password --gecos "" appuser
 USER appuser
 
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PORT=8000
+
 # Command to run the application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
