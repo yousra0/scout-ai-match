@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
+import { Edit, Loader2 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import PlayerHeader from '@/components/player/PlayerHeader';
 import PlayerOverview from '@/components/player/PlayerOverview';
@@ -14,18 +14,23 @@ import PlayerExperience from '@/components/player/PlayerExperience';
 import PlayerTeamFit from '@/components/player/PlayerTeamFit';
 import { playerData, radarData, statsData } from '@/components/player/PlayerData';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, PlayerExperience as PlayerExperienceType } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import ProfileEditForm from '@/components/player/ProfileEditForm';
 
 const PlayerProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [playerProfile, setPlayerProfile] = useState<any>(null);
   const [playerMedia, setPlayerMedia] = useState<any[]>([]);
+  const [playerExperiences, setPlayerExperiences] = useState<PlayerExperienceType[]>([]);
   const [notFound, setNotFound] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  const isCurrentUserProfile = user?.id === id;
 
   useEffect(() => {
     const fetchPlayerData = async () => {
@@ -86,6 +91,17 @@ const PlayerProfilePage = () => {
           throw mediaError;
         }
         
+        // Fetch player experiences
+        const { data: experienceData, error: experienceError } = await supabase
+          .from('player_experience')
+          .select('*')
+          .eq('player_id', id)
+          .order('start_date', { ascending: false });
+          
+        if (experienceError) {
+          throw experienceError;
+        }
+        
         // Combine data
         const fullPlayerData = {
           ...profileData,
@@ -95,6 +111,7 @@ const PlayerProfilePage = () => {
         
         setPlayerProfile(fullPlayerData);
         setPlayerMedia(mediaData || []);
+        setPlayerExperiences(experienceData || []);
         
       } catch (error) {
         console.error('Error fetching player data:', error);
@@ -181,70 +198,96 @@ const PlayerProfilePage = () => {
         <div className="mb-6">
           <Card>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                {/* Left column - Avatar and basic info */}
-                <div className="col-span-1 md:col-span-3">
-                  <PlayerHeader player={headerData} />
+              {isEditingProfile ? (
+                <ProfileEditForm
+                  playerProfile={playerProfile}
+                  onCancel={() => setIsEditingProfile(false)}
+                  onSuccess={(updatedProfile) => {
+                    setPlayerProfile({...playerProfile, ...updatedProfile});
+                    setIsEditingProfile(false);
+                  }}
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                  {/* Left column - Avatar and basic info */}
+                  <div className="col-span-1 md:col-span-3">
+                    <PlayerHeader player={headerData} />
+                    
+                    {isCurrentUserProfile && (
+                      <div className="mt-4">
+                        <Button 
+                          onClick={() => setIsEditingProfile(true)} 
+                          variant="outline" 
+                          className="w-full"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Profile
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Right column - Tabs with detailed info */}
+                  <div className="col-span-1 md:col-span-9">
+                    <Tabs defaultValue="overview">
+                      <TabsList className="mb-6 grid grid-cols-5 md:w-auto">
+                        <TabsTrigger value="overview">Overview</TabsTrigger>
+                        <TabsTrigger value="stats">Stats</TabsTrigger>
+                        <TabsTrigger value="highlights">Highlights</TabsTrigger>
+                        <TabsTrigger value="experience">Experience</TabsTrigger>
+                        <TabsTrigger value="fit">Team Fit</TabsTrigger>
+                      </TabsList>
+                      
+                      {/* Overview Tab */}
+                      <TabsContent value="overview">
+                        <PlayerOverview 
+                          bio={playerProfile?.description || playerData.bio} 
+                          attributes={playerData.attributes} 
+                          radarData={radarData}
+                          contact={playerProfile ? {
+                            email: user?.email,
+                            location: playerProfile.club || 'Not specified',
+                          } : undefined}
+                        />
+                      </TabsContent>
+                      
+                      {/* Stats Tab */}
+                      <TabsContent value="stats">
+                        <PlayerStats 
+                          stats={playerData.stats} 
+                          statsData={statsData} 
+                          recentPerformance={playerData.recentPerformance}
+                        />
+                      </TabsContent>
+                      
+                      {/* Highlights Tab */}
+                      <TabsContent value="highlights">
+                        <PlayerHighlights 
+                          mediaItems={videos.length > 0 ? videos : playerData.highlights} 
+                          photoItems={photos.length > 0 ? photos : []} 
+                          isCurrentUserProfile={isCurrentUserProfile}
+                          playerId={id || ''}
+                        />
+                      </TabsContent>
+                      
+                      {/* Experience Tab */}
+                      <TabsContent value="experience">
+                        <PlayerExperience 
+                          experiences={playerExperiences.length > 0 ? playerExperiences : playerData.experience}
+                          education={playerData.education}
+                          isCurrentUserProfile={isCurrentUserProfile}
+                          playerId={id || ''}
+                        />
+                      </TabsContent>
+                      
+                      {/* Team Fit Tab */}
+                      <TabsContent value="fit">
+                        <PlayerTeamFit matchPercentage={playerData.matchPercentage} />
+                      </TabsContent>
+                    </Tabs>
+                  </div>
                 </div>
-                
-                {/* Right column - Tabs with detailed info */}
-                <div className="col-span-1 md:col-span-9">
-                  <Tabs defaultValue="overview">
-                    <TabsList className="mb-6 grid grid-cols-5 md:w-auto">
-                      <TabsTrigger value="overview">Overview</TabsTrigger>
-                      <TabsTrigger value="stats">Stats</TabsTrigger>
-                      <TabsTrigger value="highlights">Highlights</TabsTrigger>
-                      <TabsTrigger value="experience">Experience</TabsTrigger>
-                      <TabsTrigger value="fit">Team Fit</TabsTrigger>
-                    </TabsList>
-                    
-                    {/* Overview Tab */}
-                    <TabsContent value="overview">
-                      <PlayerOverview 
-                        bio={playerProfile?.description || playerData.bio} 
-                        attributes={playerData.attributes} 
-                        radarData={radarData}
-                        contact={playerProfile ? {
-                          email: user?.email,
-                          location: playerProfile.club || 'Not specified',
-                        } : undefined}
-                      />
-                    </TabsContent>
-                    
-                    {/* Stats Tab */}
-                    <TabsContent value="stats">
-                      <PlayerStats 
-                        stats={playerData.stats} 
-                        statsData={statsData} 
-                        recentPerformance={playerData.recentPerformance}
-                      />
-                    </TabsContent>
-                    
-                    {/* Highlights Tab */}
-                    <TabsContent value="highlights">
-                      <PlayerHighlights 
-                        mediaItems={videos.length > 0 ? videos : playerData.highlights} 
-                        photoItems={photos.length > 0 ? photos : []} 
-                        isCurrentUserProfile={user?.id === id}
-                        playerId={id || ''}
-                      />
-                    </TabsContent>
-                    
-                    {/* Experience Tab */}
-                    <TabsContent value="experience">
-                      <PlayerExperience 
-                        experience={playerData.experience} 
-                        education={playerData.education} 
-                      />
-                    </TabsContent>
-                    
-                    {/* Team Fit Tab */}
-                    <TabsContent value="fit">
-                      <PlayerTeamFit matchPercentage={playerData.matchPercentage} />
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>

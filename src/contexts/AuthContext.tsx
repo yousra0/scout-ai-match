@@ -12,6 +12,21 @@ export type ProfileType = {
   user_type: 'player' | 'coach' | 'club' | 'agent' | 'sponsor' | 'equipment_supplier';
   created_at: string;
   updated_at: string;
+  description?: string;
+  club?: string;
+  position?: string;
+  age?: number;
+  country?: string;
+};
+
+export type PlayerExperience = {
+  id: string;
+  player_id: string;
+  club: string;
+  role: string;
+  start_date: string;
+  end_date: string | null;
+  achievements: string | null;
 };
 
 export type AuthContextType = {
@@ -28,6 +43,22 @@ export type AuthContextType = {
     data: any | null;
   }>;
   signOut: () => Promise<void>;
+  updateProfile: (profileData: Partial<ProfileType>) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
+  addPlayerExperience: (experienceData: Omit<PlayerExperience, 'id'>) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
+  updatePlayerExperience: (id: string, experienceData: Partial<PlayerExperience>) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
+  deletePlayerExperience: (id: string) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -125,14 +156,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           description: error.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Login Successful",
-          description: "Welcome back!",
-        });
+        return { data: null, error };
       }
       
-      return { data, error };
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
+      
+      return { data, error: null };
     } catch (error) {
       console.error('Sign in error:', error);
       toast({
@@ -165,14 +197,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           description: error.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Registration Successful",
-          description: "Please check your email to confirm your account.",
-        });
+        return { data: null, error };
       }
       
-      return { data, error };
+      toast({
+        title: "Registration Successful",
+        description: "Please check your email to confirm your account.",
+      });
+      
+      return { data, error: null };
     } catch (error) {
       console.error('Sign up error:', error);
       toast({
@@ -186,10 +219,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Clear all user state
       setSession(null);
       setUser(null);
       setProfile(null);
+      
+      return;
     } catch (error) {
       console.error('Sign out error:', error);
       toast({
@@ -197,6 +235,126 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         description: "There was a problem signing you out.",
         variant: "destructive",
       });
+    }
+  };
+  
+  const updateProfile = async (profileData: Partial<ProfileType>) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to update your profile.",
+        variant: "destructive",
+      });
+      return { data: null, error: new Error("Authentication required") };
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', user.id)
+        .select()
+        .single();
+        
+      if (error) {
+        toast({
+          title: "Update Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { data: null, error };
+      }
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
+      });
+      
+      // Update local state
+      if (data) {
+        setProfile(data as ProfileType);
+      }
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Profile update error:', error);
+      toast({
+        title: "Update Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+      return { data: null, error };
+    }
+  };
+  
+  const addPlayerExperience = async (experienceData: Omit<PlayerExperience, 'id'>) => {
+    if (!user) {
+      return { data: null, error: new Error("Authentication required") };
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('player_experience')
+        .insert({ ...experienceData, player_id: user.id })
+        .select()
+        .single();
+        
+      if (error) {
+        return { data: null, error };
+      }
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Experience add error:', error);
+      return { data: null, error };
+    }
+  };
+  
+  const updatePlayerExperience = async (id: string, experienceData: Partial<PlayerExperience>) => {
+    if (!user) {
+      return { data: null, error: new Error("Authentication required") };
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('player_experience')
+        .update(experienceData)
+        .eq('id', id)
+        .eq('player_id', user.id) // Security check
+        .select()
+        .single();
+        
+      if (error) {
+        return { data: null, error };
+      }
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Experience update error:', error);
+      return { data: null, error };
+    }
+  };
+  
+  const deletePlayerExperience = async (id: string) => {
+    if (!user) {
+      return { data: null, error: new Error("Authentication required") };
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('player_experience')
+        .delete()
+        .eq('id', id)
+        .eq('player_id', user.id); // Security check
+        
+      if (error) {
+        return { data: null, error };
+      }
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Experience delete error:', error);
+      return { data: null, error };
     }
   };
 
@@ -207,7 +365,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isLoading,
     signIn,
     signUp,
-    signOut
+    signOut,
+    updateProfile,
+    addPlayerExperience,
+    updatePlayerExperience,
+    deletePlayerExperience
   };
 
   return (

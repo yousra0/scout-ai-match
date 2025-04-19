@@ -35,56 +35,79 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppRoutes = () => (
-  <Routes>
-    <Route path="/" element={<HomePage />} />
-    <Route path="/login" element={<LoginPage />} />
-    <Route path="/register" element={<RegisterPage />} />
-    
-    {/* Main Navigation Pages */}
-    <Route path="/explore" element={<ScoutingPage />} />
-    <Route path="/matching" element={<MatchingPage />} />
-    <Route path="/recommendations" element={<RecommendationsPage />} />
-    <Route path="/opportunities" element={<OpportunitiesPage />} />
-    
-    {/* Messaging - Protected */}
-    <Route path="/messaging" element={<MessagingPage />} />
-    
-    {/* Protected Routes */}
-    <Route 
-      path="/dashboard" 
-      element={
-        <ProtectedRoute>
-          <DashboardPage />
-        </ProtectedRoute>
-      } 
-    />
-    
-    {/* Player Profile - No longer protected, can be viewed by anyone */}
-    <Route path="/players/:id" element={<PlayerProfilePage />} />
-    
-    <Route 
-      path="/discover" 
-      element={
-        <ProtectedRoute>
-          <ScoutingPage />
-        </ProtectedRoute>
-      } 
-    />
-    
-    {/* Stakeholder routes */}
-    <Route path="/clubs/:id" element={<StakeholderProfilePage />} />
-    <Route path="/managers/:id" element={<StakeholderProfilePage />} />
-    <Route path="/agents/:id" element={<StakeholderProfilePage />} />
-    <Route path="/services/:id" element={<StakeholderProfilePage />} />
-    <Route path="/coaches/:id" element={<StakeholderProfilePage />} />
-    <Route path="/sponsors/:id" element={<StakeholderProfilePage />} />
-    <Route path="/equipment-suppliers/:id" element={<StakeholderProfilePage />} />
-    <Route path="/:type/:id" element={<StakeholderProfilePage />} />
-    
-    <Route path="*" element={<NotFound />} />
-  </Routes>
-);
+const AppRoutes = () => {
+  const { user } = useAuth();
+  
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      
+      {/* Main Navigation Pages */}
+      <Route path="/explore" element={<ScoutingPage />} />
+      <Route path="/matching" element={<MatchingPage />} />
+      <Route path="/recommendations" element={<RecommendationsPage />} />
+      <Route path="/opportunities" element={<OpportunitiesPage />} />
+      
+      {/* Automatically redirect to own profile if user is logged in */}
+      <Route 
+        path="/profile" 
+        element={
+          user ? (
+            <Navigate to={`/players/${user.id}`} replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        } 
+      />
+      
+      {/* Messaging - Protected */}
+      <Route 
+        path="/messaging" 
+        element={
+          <ProtectedRoute>
+            <MessagingPage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Protected Routes */}
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Player Profile - No longer protected, can be viewed by anyone */}
+      <Route path="/players/:id" element={<PlayerProfilePage />} />
+      
+      <Route 
+        path="/discover" 
+        element={
+          <ProtectedRoute>
+            <ScoutingPage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Stakeholder routes */}
+      <Route path="/clubs/:id" element={<StakeholderProfilePage />} />
+      <Route path="/managers/:id" element={<StakeholderProfilePage />} />
+      <Route path="/agents/:id" element={<StakeholderProfilePage />} />
+      <Route path="/services/:id" element={<StakeholderProfilePage />} />
+      <Route path="/coaches/:id" element={<StakeholderProfilePage />} />
+      <Route path="/sponsors/:id" element={<StakeholderProfilePage />} />
+      <Route path="/equipment-suppliers/:id" element={<StakeholderProfilePage />} />
+      <Route path="/:type/:id" element={<StakeholderProfilePage />} />
+      
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

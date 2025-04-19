@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +16,7 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,22 +33,14 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await signIn(email, password);
       
-      if (error) throw error;
-      
-      if (data.user) {
-        toast({
-          title: "Logged in successfully",
-          description: "Welcome back!",
-        });
-        
-        // Navigate to home page after successful login instead of dashboard
-        navigate('/');
+      if (error) {
+        throw error;
       }
+      
+      // Navigate to home page after successful login
+      navigate('/');
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
