@@ -1,16 +1,9 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import { useAuth, PlayerExperience as PlayerExperienceType } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import ExperienceForm from './ExperienceForm';
-
-interface Education {
-  institution: string;
-  qualification: string;
-  period: string;
-}
 
 interface PlayerExperienceProps {
   experiences: PlayerExperienceType[] | Array<{
@@ -19,12 +12,11 @@ interface PlayerExperienceProps {
     period: string;
     achievements: string;
   }>;
-  education: Education[];
   isCurrentUserProfile: boolean;
   playerId: string;
 }
 
-const PlayerExperience = ({ experiences, education, isCurrentUserProfile, playerId }: PlayerExperienceProps) => {
+const PlayerExperience = ({ experiences, isCurrentUserProfile, playerId }: PlayerExperienceProps) => {
   const [editingExperience, setEditingExperience] = useState<PlayerExperienceType | null>(null);
   const [isAddingExperience, setIsAddingExperience] = useState(false);
   const { addPlayerExperience, updatePlayerExperience, deletePlayerExperience } = useAuth();
@@ -43,7 +35,6 @@ const PlayerExperience = ({ experiences, education, isCurrentUserProfile, player
       });
       
       setIsAddingExperience(false);
-      // Reload page to show updated data
       window.location.reload();
       
     } catch (error) {
@@ -66,7 +57,6 @@ const PlayerExperience = ({ experiences, education, isCurrentUserProfile, player
       });
       
       setEditingExperience(null);
-      // Reload page to show updated data
       window.location.reload();
       
     } catch (error) {
@@ -92,7 +82,6 @@ const PlayerExperience = ({ experiences, education, isCurrentUserProfile, player
         description: "Your experience has been deleted successfully."
       });
       
-      // Reload page to show updated data
       window.location.reload();
       
     } catch (error) {
@@ -105,7 +94,6 @@ const PlayerExperience = ({ experiences, education, isCurrentUserProfile, player
     }
   };
   
-  // Determine if experiences are from database or from mock data
   const isDbExperiences = experiences.length > 0 && 'id' in experiences[0];
   
   return (
@@ -148,8 +136,7 @@ const PlayerExperience = ({ experiences, education, isCurrentUserProfile, player
         
         <div className="space-y-6">
           {isDbExperiences ? (
-            // Render database experiences with edit/delete buttons
-            (experiences as PlayerExperienceType[]).map((exp, index) => (
+            (experiences as PlayerExperienceType[]).map((exp) => (
               <div key={exp.id} className="border-l-2 border-primary pl-4 pb-6">
                 <div className="flex justify-between items-start">
                   <div>
@@ -183,7 +170,6 @@ const PlayerExperience = ({ experiences, education, isCurrentUserProfile, player
               </div>
             ))
           ) : (
-            // Render mock data experiences
             experiences.map((exp: any, index: number) => (
               <div key={index} className="border-l-2 border-primary pl-4 pb-6">
                 <h4 className="font-medium">{exp.club}</h4>
@@ -192,18 +178,6 @@ const PlayerExperience = ({ experiences, education, isCurrentUserProfile, player
               </div>
             ))
           )}
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Education & Training</h3>
-        <div className="space-y-6">
-          {education.map((edu, index) => (
-            <div key={index} className="border-l-2 border-gray-300 pl-4">
-              <h4 className="font-medium">{edu.institution}</h4>
-              <div className="text-sm text-gray-600">{edu.qualification} • {edu.period}</div>
-            </div>
-          ))}
         </div>
       </div>
     </div>

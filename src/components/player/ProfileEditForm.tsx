@@ -4,15 +4,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
+import countryList from '@/data/countries.json';
 
 interface ProfileEditFormProps {
   playerProfile: any;
   onCancel: () => void;
   onSuccess: (updatedProfile: any) => void;
 }
+
+const positions = [
+  'Goalkeeper',
+  'Right Back',
+  'Center Back',
+  'Left Back',
+  'Defensive Midfielder',
+  'Central Midfielder',
+  'Attacking Midfielder',
+  'Right Winger',
+  'Left Winger',
+  'Striker',
+  'Forward'
+];
 
 const ProfileEditForm = ({ playerProfile, onCancel, onSuccess }: ProfileEditFormProps) => {
   const [formData, setFormData] = useState({
@@ -24,9 +42,69 @@ const ProfileEditForm = ({ playerProfile, onCancel, onSuccess }: ProfileEditForm
     age: playerProfile?.age || '',
     country: playerProfile?.country || ''
   });
+  
   const [isLoading, setIsLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+  const [filteredCountries, setFilteredCountries] = useState<string[]>([]);
   const { updateProfile } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (countrySearch) {
+      const filtered = countryList
+        .filter(country => 
+          country.toLowerCase().includes(countrySearch.toLowerCase()))
+        .slice(0, 10);
+      setFilteredCountries(filtered);
+    } else {
+      setFilteredCountries([]);
+    }
+  }, [countrySearch]);
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      
+      if (!event.target.files || event.target.files.length === 0) {
+        throw new Error('You must select an image to upload.');
+      }
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${Date.now()}.${fileExt}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({
+        ...prev,
+        avatar_url: publicUrl
+      }));
+
+      toast({
+        title: "Success",
+        description: "Avatar uploaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -51,9 +129,7 @@ const ProfileEditForm = ({ playerProfile, onCancel, onSuccess }: ProfileEditForm
         country: formData.country
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Profile Updated",
@@ -61,7 +137,7 @@ const ProfileEditForm = ({ playerProfile, onCancel, onSuccess }: ProfileEditForm
       });
 
       onSuccess(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
         title: "Update Failed",
@@ -91,27 +167,58 @@ const ProfileEditForm = ({ playerProfile, onCancel, onSuccess }: ProfileEditForm
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="avatar_url">Avatar URL</Label>
-          <Input
-            id="avatar_url"
-            name="avatar_url"
-            value={formData.avatar_url}
-            onChange={handleChange}
-            disabled={isLoading}
-            placeholder="https://example.com/avatar.jpg"
-          />
+          <Label>Profile Picture</Label>
+          <div className="flex items-center gap-4">
+            {formData.avatar_url && (
+              <img 
+                src={formData.avatar_url} 
+                alt="Avatar preview" 
+                className="h-12 w-12 rounded-full object-cover"
+              />
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={uploading}
+              onClick={() => document.getElementById('avatar-upload')?.click()}
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Photo
+                </>
+              )}
+            </Button>
+            <input
+              type="file"
+              id="avatar-upload"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
+          </div>
         </div>
         
         <div className="space-y-2">
           <Label htmlFor="position">Position</Label>
-          <Input
-            id="position"
-            name="position"
-            value={formData.position}
-            onChange={handleChange}
-            disabled={isLoading}
-            placeholder="Striker, Goalkeeper, etc."
-          />
+          <Select 
+            value={formData.position} 
+            onValueChange={(value) => setFormData(prev => ({ ...prev, position: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select position" />
+            </SelectTrigger>
+            <SelectContent>
+              {positions.map((pos) => (
+                <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="space-y-2">
@@ -142,14 +249,36 @@ const ProfileEditForm = ({ playerProfile, onCancel, onSuccess }: ProfileEditForm
         
         <div className="space-y-2">
           <Label htmlFor="country">Country</Label>
-          <Input
-            id="country"
-            name="country"
-            value={formData.country}
-            onChange={handleChange}
-            disabled={isLoading}
-            placeholder="Spain, Brazil, etc."
-          />
+          <div className="relative">
+            <Input
+              id="country"
+              name="country"
+              value={countrySearch}
+              onChange={(e) => {
+                setCountrySearch(e.target.value);
+                setFormData(prev => ({ ...prev, country: e.target.value }));
+              }}
+              disabled={isLoading}
+              placeholder="Start typing..."
+            />
+            {filteredCountries.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                {filteredCountries.map((country) => (
+                  <div
+                    key={country}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, country }));
+                      setCountrySearch(country);
+                      setFilteredCountries([]);
+                    }}
+                  >
+                    {country}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       

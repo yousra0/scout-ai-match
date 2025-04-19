@@ -39,8 +39,11 @@ const LoginForm = () => {
         throw error;
       }
       
-      // Navigate to home page after successful login
-      navigate('/');
+      // Set a small timeout to ensure the auth state is updated
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
+      
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
@@ -48,7 +51,6 @@ const LoginForm = () => {
         description: error.message || "There was a problem with your login.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
