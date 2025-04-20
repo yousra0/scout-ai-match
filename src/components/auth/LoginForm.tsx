@@ -33,16 +33,27 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await signIn(email, password);
+      const { error, data } = await signIn(email, password);
       
       if (error) {
         throw error;
       }
       
-      // Set a small timeout to ensure the auth state is updated
+      toast({
+        title: "Login successful",
+        description: "You have been logged in successfully.",
+      });
+      
+      // Clear login form
+      setEmail('');
+      setPassword('');
+      
+      // Make sure we wait for authentication to complete before redirecting
       setTimeout(() => {
+        // If user is logged in successfully, navigate to home page
+        // The AuthContext will handle redirection to the profile if needed
         navigate('/');
-      }, 100);
+      }, 500); // Small timeout to ensure auth state updates
       
     } catch (error: any) {
       console.error('Login error:', error);
@@ -51,6 +62,7 @@ const LoginForm = () => {
         description: error.message || "There was a problem with your login.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
