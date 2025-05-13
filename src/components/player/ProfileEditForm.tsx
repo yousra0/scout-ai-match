@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +7,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import countries from '@/data/countries.json';
+
+// Define a type for our countries
+type Country = {
+  code: string;
+  name: string;
+};
 
 export interface ProfileEditFormProps {
   playerData: any;
@@ -142,8 +147,8 @@ const ProfileEditForm = ({ playerData, onSave, onCancel }: ProfileEditFormProps)
             <SelectValue placeholder="Select country" />
           </SelectTrigger>
           <SelectContent>
-            {countries.map((country) => (
-              <SelectItem key={country.code} value={country.name}>
+            {countries.map((country: Country) => (
+              <SelectItem key={country.code} value={country.code}>
                 {country.name}
               </SelectItem>
             ))}

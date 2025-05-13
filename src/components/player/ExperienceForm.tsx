@@ -41,7 +41,7 @@ const ExperienceForm = ({ onCancel, onComplete, userId, experienceData }: Experi
     setIsSubmitting(true);
     
     try {
-      const experienceData = {
+      const experiencePayload = {
         player_id: userId,
         club,
         role,
@@ -53,11 +53,11 @@ const ExperienceForm = ({ onCancel, onComplete, userId, experienceData }: Experi
       
       let error;
       
-      if (experienceData) {
+      if (experienceData?.id) {
         // Update existing experience
         const { error: updateError } = await supabase
           .from('player_experience')
-          .update(experienceData)
+          .update(experiencePayload)
           .eq('id', experienceData.id);
           
         error = updateError;
@@ -65,7 +65,7 @@ const ExperienceForm = ({ onCancel, onComplete, userId, experienceData }: Experi
         // Create new experience
         const { error: insertError } = await supabase
           .from('player_experience')
-          .insert([experienceData]);
+          .insert([experiencePayload]);
           
         error = insertError;
       }

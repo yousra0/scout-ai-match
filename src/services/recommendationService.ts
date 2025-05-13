@@ -5,11 +5,18 @@ import {
   calculateMatchScore, 
   cosineSimilarity 
 } from '@/utils/similarityModels';
+import {
+  mockPlayers,
+  mockCoaches,
+  mockClubs,
+  mockAgents,
+  mockSponsors
+} from '@/components/player/PlayerData';
 
 export interface Recommendation {
   id: string;
   title: string;
-  type: 'player' | 'club' | 'agent' | 'coach' | 'event' | 'course' | 'opportunity';
+  type: 'player' | 'club' | 'agent' | 'coach' | 'event' | 'course' | 'opportunity' | 'sponsor' | 'equipment_supplier';
   category: string;
   description: string;
   imageUrl?: string;
@@ -36,7 +43,9 @@ export const fetchRecommendationsByType = async (
         player_details(*),
         coach_details(*),
         club_details(*),
-        agent_details(*)
+        agent_details(*),
+        sponsor_details(*),
+        equipment_supplier_details(*)
       `)
       .eq('id', userId)
       .single();
@@ -59,7 +68,9 @@ export const fetchRecommendationsByType = async (
         player_details(*),
         coach_details(*),
         club_details(*),
-        agent_details(*)
+        agent_details(*),
+        sponsor_details(*),
+        equipment_supplier_details(*)
       `)
       .eq('user_type', type)
       .neq('id', userId);
@@ -101,6 +112,10 @@ export const fetchRecommendationsByType = async (
           reason = `Coach specializing in ${details?.specialization || 'your needs'} could improve your skills`;
         } else if (profile.user_type === 'agent') {
           reason = `Agent with experience in ${details?.specialization || 'your area'} could help your career`;
+        } else if (profile.user_type === 'sponsor') {
+          reason = `Sponsor interested in ${details?.sponsorship_focus || 'athletes like you'} could be a good partnership`;
+        } else if (profile.user_type === 'equipment_supplier') {
+          reason = `Equipment supplier specializing in ${details?.specialization || 'your sport'} might be a good fit`;
         }
         
         return {
@@ -136,15 +151,16 @@ export const getRecommendations = async (
 ): Promise<Recommendation[]> => {
   try {
     // Get recommendations for different entity types
-    const [players, clubs, coaches, agents] = await Promise.all([
+    const [players, clubs, coaches, agents, sponsors] = await Promise.all([
       fetchRecommendationsByType(userId, 'player', limit),
       fetchRecommendationsByType(userId, 'club', limit),
       fetchRecommendationsByType(userId, 'coach', limit),
       fetchRecommendationsByType(userId, 'agent', limit),
+      fetchRecommendationsByType(userId, 'sponsor', limit),
     ]);
     
     // Combine and sort by score
-    const allRecommendations = [...players, ...clubs, ...coaches, ...agents]
+    const allRecommendations = [...players, ...clubs, ...coaches, ...agents, ...sponsors]
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
       
@@ -179,9 +195,10 @@ export const getRecommendations = async (
   }
 };
 
-// Get mock recommendations by type
+// Enhanced mock recommendations with more data
 const getMockRecommendations = (type: string, limit: number = 5): Recommendation[] => {
-  const allMockRecommendations: Recommendation[] = [
+  // Course recommendations
+  const courseRecommendations: Recommendation[] = [
     {
       id: '101',
       title: 'Advanced Finishing Techniques',
@@ -194,6 +211,54 @@ const getMockRecommendations = (type: string, limit: number = 5): Recommendation
       score: 92
     },
     {
+      id: '107',
+      title: 'Advanced Tactical Training',
+      type: 'course',
+      category: 'Education',
+      description: 'Learn professional-level tactical understanding and positional awareness',
+      imageUrl: 'https://images.unsplash.com/photo-1611156340633-8964be513ee4',
+      date: 'Online, self-paced',
+      reason: 'Would complement your technical skills with tactical knowledge',
+      score: 87
+    },
+    {
+      id: '111',
+      title: 'Performance Psychology for Athletes',
+      type: 'course',
+      category: 'Mental Training',
+      description: 'Techniques to improve mental toughness, focus, and game preparation',
+      imageUrl: 'https://images.unsplash.com/photo-1508706000025-411d1788f9b9',
+      tags: ['Psychology', 'Mental Strength', 'Performance'],
+      reason: 'Could help you improve your mental game under pressure',
+      score: 86
+    },
+    {
+      id: '112',
+      title: 'Leadership Skills for Team Captains',
+      type: 'course',
+      category: 'Leadership',
+      description: 'Develop the leadership qualities needed to captain your team effectively',
+      imageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac',
+      tags: ['Leadership', 'Communication', 'Team Building'],
+      reason: 'Based on your team role and career trajectory',
+      score: 83
+    },
+    {
+      id: '113',
+      title: 'Recovery & Injury Prevention',
+      type: 'course',
+      category: 'Fitness',
+      description: 'Science-backed approaches to staying fit and avoiding injuries',
+      imageUrl: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2',
+      tags: ['Recovery', 'Injury Prevention', 'Fitness'],
+      reason: 'Essential knowledge for prolonging your athletic career',
+      score: 81
+    }
+  ];
+
+  // Event recommendations
+  const eventRecommendations: Recommendation[] = [
+    {
       id: '102',
       title: 'Youth Tournament - Barcelona',
       type: 'event',
@@ -204,62 +269,6 @@ const getMockRecommendations = (type: string, limit: number = 5): Recommendation
       date: 'June 15-20, 2025',
       reason: 'Matches your age group and performance level',
       score: 88
-    },
-    {
-      id: '103',
-      title: 'Trial Opportunity - Brighton & Hove U23',
-      type: 'opportunity',
-      category: 'Trial',
-      description: 'Week-long trial with Premier League club\'s U23 team',
-      imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018',
-      location: 'Brighton, UK',
-      date: 'July 10-17, 2025',
-      reason: 'Matches your skill level and career aspirations',
-      score: 85
-    },
-    {
-      id: '104',
-      title: 'FC Ajax Youth Academy',
-      type: 'club',
-      category: 'Academy',
-      description: 'Renowned for developing technical players with strong fundamentals',
-      imageUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/79/Ajax_Amsterdam.svg/1200px-Ajax_Amsterdam.svg.png',
-      location: 'Amsterdam, Netherlands',
-      reason: 'Aligns with your playing style and development needs',
-      score: 86
-    },
-    {
-      id: '105',
-      title: 'Mental Performance Coach - Sarah Williams',
-      type: 'coach',
-      category: 'Mental Training',
-      description: 'Sports psychologist specializing in young athlete mental preparation',
-      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
-      location: 'Online Sessions Available',
-      reason: 'Could help improve your mental game based on recent performances',
-      score: 84
-    },
-    {
-      id: '106',
-      title: 'Elite Sports Management',
-      type: 'agent',
-      category: 'Career Management',
-      description: 'Boutique agency specializing in youth development and career planning',
-      imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978',
-      location: 'London, UK',
-      reason: 'Their focus on youth players matches your career stage',
-      score: 82
-    },
-    {
-      id: '107',
-      title: 'Advanced Tactical Training',
-      type: 'course',
-      category: 'Education',
-      description: 'Learn professional-level tactical understanding and positional awareness',
-      imageUrl: 'https://images.unsplash.com/photo-1611156340633-8964be513ee4',
-      date: 'Online, self-paced',
-      reason: 'Would complement your technical skills with tactical knowledge',
-      score: 87
     },
     {
       id: '108',
@@ -274,6 +283,58 @@ const getMockRecommendations = (type: string, limit: number = 5): Recommendation
       score: 89
     },
     {
+      id: '114',
+      title: 'Football Tech Showcase',
+      type: 'event',
+      category: 'Exhibition',
+      description: 'The latest in football technology, training equipment and analytics',
+      imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55',
+      location: 'London, UK',
+      date: 'September 8-10, 2025',
+      reason: 'Could help you discover new tools to improve your game',
+      score: 84
+    },
+    {
+      id: '115',
+      title: 'Elite Skills Workshop',
+      type: 'event',
+      category: 'Training',
+      description: 'Intensive two-day workshop with professional coaches',
+      imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018',
+      location: 'Paris, France',
+      date: 'July 22-23, 2025',
+      reason: 'Focused on skills relevant to your playing style',
+      score: 86
+    },
+    {
+      id: '116',
+      title: 'Football Agents Networking Day',
+      type: 'event',
+      category: 'Networking',
+      description: 'Connect with licensed agents from top agencies around the world',
+      imageUrl: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622',
+      location: 'Frankfurt, Germany',
+      date: 'May 15, 2025',
+      reason: 'Could help advance your professional career opportunities',
+      score: 82
+    }
+  ];
+
+  // Opportunity recommendations
+  const opportunityRecommendations: Recommendation[] = [
+    {
+      id: '103',
+      title: 'Trial Opportunity - Brighton & Hove U23',
+      type: 'opportunity',
+      category: 'Trial',
+      description: 'Week-long trial with Premier League club\'s U23 team',
+      imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018',
+      location: 'Brighton, UK',
+      date: 'July 10-17, 2025',
+      reason: 'Matches your skill level and career aspirations',
+      score: 85
+    },
+    {
       id: '109',
       title: 'Professional Trial Series - Germany',
       type: 'opportunity',
@@ -284,17 +345,129 @@ const getMockRecommendations = (type: string, limit: number = 5): Recommendation
       date: 'September 5-15, 2025',
       reason: 'Your playing style would be appreciated in German football',
       score: 83
+    },
+    {
+      id: '117',
+      title: 'US College Scholarship Program',
+      type: 'opportunity',
+      category: 'Scholarship',
+      description: 'Full athletic scholarship opportunities at Division 1 US colleges',
+      imageUrl: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f',
+      location: 'USA, Various',
+      date: 'Applications due October 1, 2025',
+      reason: 'Combines athletic development with quality education',
+      score: 87
+    },
+    {
+      id: '118',
+      title: 'Football Media Internship',
+      type: 'opportunity',
+      category: 'Internship',
+      description: 'Learn sports media skills with leading broadcaster',
+      imageUrl: 'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1',
+      location: 'Remote/London',
+      date: 'Starting January 2026',
+      reason: 'Could provide valuable skills for your post-playing career',
+      score: 79
+    },
+    {
+      id: '119',
+      title: 'Youth Coaching Certification',
+      type: 'opportunity',
+      category: 'Certification',
+      description: 'Get certified as a youth coach while still playing',
+      imageUrl: 'https://images.unsplash.com/photo-1591343395902-1adcb454c4e2',
+      location: 'Online with practical sessions',
+      date: 'Flexible enrollment',
+      reason: 'Build valuable coaching skills alongside your playing career',
+      score: 81
     }
   ];
   
+  // Convert our mock player/coach/club etc data to recommendations format
+  const playerRecommendations: Recommendation[] = mockPlayers.map(player => ({
+    id: player.id,
+    title: player.name,
+    type: 'player',
+    category: player.position || 'Player',
+    description: player.description,
+    imageUrl: player.avatarUrl,
+    location: player.location,
+    tags: player.skills,
+    reason: `Player with similar style and complementary skills`,
+    score: player.matchScore
+  }));
+  
+  const coachRecommendations: Recommendation[] = mockCoaches.map(coach => ({
+    id: coach.id,
+    title: coach.name,
+    type: 'coach',
+    category: 'Coaching',
+    description: coach.description,
+    imageUrl: coach.avatarUrl,
+    location: coach.location,
+    tags: coach.skills,
+    reason: `Coach with expertise that matches your development needs`,
+    score: coach.matchScore
+  }));
+  
+  const clubRecommendations: Recommendation[] = mockClubs.map(club => ({
+    id: club.id,
+    title: club.name,
+    type: 'club',
+    category: 'Club',
+    description: club.description,
+    imageUrl: club.avatarUrl,
+    location: club.location,
+    reason: `Club that fits your playing style and career goals`,
+    score: club.matchScore
+  }));
+  
+  const agentRecommendations: Recommendation[] = mockAgents.map(agent => ({
+    id: agent.id,
+    title: agent.name,
+    type: 'agent',
+    category: 'Agent',
+    description: agent.description,
+    imageUrl: agent.avatarUrl,
+    location: agent.location,
+    tags: agent.skills,
+    reason: `Agent with expertise in your career development needs`,
+    score: agent.matchScore
+  }));
+  
+  const sponsorRecommendations: Recommendation[] = mockSponsors.map(sponsor => ({
+    id: sponsor.id,
+    title: sponsor.name,
+    type: 'sponsor',
+    category: 'Sponsor',
+    description: sponsor.description,
+    imageUrl: sponsor.avatarUrl,
+    location: sponsor.location,
+    reason: `Sponsor interested in athletes with your profile`,
+    score: sponsor.matchScore
+  }));
+
+  // Combine all recommendation types
+  const allRecommendations = [
+    ...courseRecommendations,
+    ...eventRecommendations,
+    ...opportunityRecommendations,
+    ...playerRecommendations,
+    ...coachRecommendations,
+    ...clubRecommendations,
+    ...agentRecommendations,
+    ...sponsorRecommendations
+  ];
+  
   // Filter by type if specified
-  let filteredRecommendations = allMockRecommendations;
+  let filteredRecommendations = allRecommendations;
   if (type !== 'all') {
-    filteredRecommendations = allMockRecommendations.filter(rec => rec.type === type);
+    filteredRecommendations = allRecommendations.filter(rec => rec.type === type);
     
     // If we still need more, grab from other types to fill
     if (filteredRecommendations.length < limit) {
-      const remaining = allMockRecommendations.filter(rec => rec.type !== type);
+      const remaining = allRecommendations.filter(rec => rec.type !== type);
       filteredRecommendations = [...filteredRecommendations, ...remaining];
     }
   }

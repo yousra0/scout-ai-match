@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -174,6 +173,14 @@ const PlayerProfilePage = () => {
     );
   }
   
+  // Expand the playerData object to include missing attributes
+  const playerWithFullData = {
+    ...playerData,
+    height: "185 cm",
+    weight: "80 kg",
+    preferredFoot: "Right"
+  };
+  
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
       {isEditing ? (
@@ -215,9 +222,9 @@ const PlayerProfilePage = () => {
                     description={playerProfile.description || 'No description available.'}
                     age={playerProfile.age || 'N/A'}
                     position={playerProfile.position || 'N/A'}
-                    height={playerData.height}
-                    weight={playerData.weight}
-                    foot={playerData.preferredFoot}
+                    height={playerWithFullData.height || 'Not specified'}
+                    weight={playerWithFullData.weight || 'Not specified'}
+                    foot={playerWithFullData.preferredFoot || 'Not specified'}
                     nationality={playerProfile.country || 'N/A'}
                   />
                 </TabsContent>

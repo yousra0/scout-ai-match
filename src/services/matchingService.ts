@@ -6,6 +6,13 @@ import {
   calculateMatchScore,
   cosineSimilarity
 } from '@/utils/similarityModels';
+import {
+  mockPlayers,
+  mockCoaches,
+  mockClubs,
+  mockAgents,
+  mockSponsors
+} from '@/components/player/PlayerData';
 
 export interface Match {
   id: string;
@@ -99,14 +106,14 @@ export const findMatchesKNN = async (
     const userProfile = await fetchUserProfile(userId);
     if (!userProfile) {
       console.log('User profile not found, using mock data');
-      return getMockMatches(k);
+      return getMockMatches(userType, k);
     }
     
     // Get all potential matches
     const allProfiles = await fetchProfilesForMatching(userType, userId);
     if (allProfiles.length === 0) {
       console.log('No profiles found for matching, using mock data');
-      return getMockMatches(k);
+      return getMockMatches(userType, k);
     }
     
     // Convert profiles to feature vectors
@@ -148,14 +155,14 @@ export const findMatchesKNN = async (
     
     if (matches.length === 0) {
       console.log('No matches found with KNN, using mock data');
-      return getMockMatches(k);
+      return getMockMatches(userType, k);
     }
     
     return matches;
     
   } catch (error) {
     console.error('Error finding matches with KNN:', error);
-    return getMockMatches(k);
+    return getMockMatches(userType, k);
   }
 };
 
@@ -170,14 +177,14 @@ export const findMatchesCosineSimilarity = async (
     const userProfile = await fetchUserProfile(userId);
     if (!userProfile) {
       console.log('User profile not found, using mock data');
-      return getMockMatches(limit);
+      return getMockMatches(userType, limit);
     }
     
     // Get all potential matches
     const allProfiles = await fetchProfilesForMatching(userType, userId);
     if (allProfiles.length === 0) {
       console.log('No profiles found for matching, using mock data');
-      return getMockMatches(limit);
+      return getMockMatches(userType, limit);
     }
     
     // Convert profiles to feature vectors
@@ -220,74 +227,32 @@ export const findMatchesCosineSimilarity = async (
     
     if (matches.length === 0) {
       console.log('No matches found with cosine similarity, using mock data');
-      return getMockMatches(limit);
+      return getMockMatches(userType, limit);
     }
     
     return matches;
     
   } catch (error) {
     console.error('Error finding matches with cosine similarity:', error);
-    return getMockMatches(limit);
+    return getMockMatches(userType, limit);
   }
 };
 
-// Get mock matches for fallback
-const getMockMatches = (limit: number = 6): Match[] => {
-  const mockMatches: Match[] = [
-    {
-      id: '1',
-      name: 'FC Barcelona Youth Academy',
-      type: 'club',
-      matchScore: 95,
-      description: 'Looking for talented young players with technical skills',
-      avatarUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/1200px-FC_Barcelona_%28crest%29.svg.png',
-      location: 'Barcelona, Spain',
-    },
-    {
-      id: '2',
-      name: 'Marco Rossi',
-      type: 'coach',
-      matchScore: 93,
-      description: 'Specializes in developing young attacking talent',
-      skills: ['Youth Development', 'Attacking Tactics', 'Technical Training'],
-      location: 'Milan, Italy',
-    },
-    {
-      id: '3',
-      name: 'Sarah Johnson',
-      type: 'player',
-      matchScore: 91,
-      description: 'Talented midfielder looking for a new challenge',
-      position: 'Midfielder',
-      location: 'London, UK',
-      skills: ['Passing', 'Vision', 'Ball Control'],
-    },
-    {
-      id: '4',
-      name: 'Elite Sports Agency',
-      type: 'agent',
-      matchScore: 88,
-      description: 'Specializing in career development for young talents',
-      location: 'Paris, France',
-    },
-    {
-      id: '5',
-      name: 'SportEquip Pro',
-      type: 'equipment_supplier',
-      matchScore: 82,
-      description: 'Custom equipment for professional athletes',
-      location: 'Berlin, Germany',
-    },
-    {
-      id: '6',
-      name: 'Global Sports Foundation',
-      type: 'sponsor',
-      matchScore: 85,
-      description: 'Supporting the next generation of sports stars',
-      location: 'New York, USA',
-    },
+// Get mock matches based on type and limit
+const getMockMatches = (type: string = 'all', limit: number = 6): Match[] => {
+  const allMockMatches = [
+    ...mockPlayers,
+    ...mockCoaches,
+    ...mockClubs,
+    ...mockAgents,
+    ...mockSponsors
   ];
   
+  // Filter by type if specified
+  const filteredMatches = type === 'all' 
+    ? allMockMatches 
+    : allMockMatches.filter(match => match.type === type);
+  
   // Return only the requested number of matches
-  return mockMatches.slice(0, limit);
+  return filteredMatches.slice(0, limit);
 };
