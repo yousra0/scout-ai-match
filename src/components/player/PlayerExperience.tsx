@@ -1,186 +1,146 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, Plus, Trash2 } from 'lucide-react';
-import { useAuth, PlayerExperience as PlayerExperienceType } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { Plus, Briefcase, CalendarRange, Trophy, Pencil, X } from 'lucide-react';
 import ExperienceForm from './ExperienceForm';
 
-interface PlayerExperienceProps {
-  experiences: PlayerExperienceType[] | Array<{
-    club: string;
-    role: string;
-    period: string;
-    achievements: string;
-  }>;
+// Define the PlayerExperience interface
+export interface PlayerExperience {
+  id?: string;
+  club: string;
+  role: string;
+  start_date: string;
+  end_date?: string;
+  is_current_role?: boolean;
+  achievements?: string;
+}
+
+export interface PlayerExperienceProps {
+  experiences: PlayerExperience[];
   isCurrentUserProfile: boolean;
   playerId: string;
 }
 
 const PlayerExperience = ({ experiences, isCurrentUserProfile, playerId }: PlayerExperienceProps) => {
-  const [editingExperience, setEditingExperience] = useState<PlayerExperienceType | null>(null);
   const [isAddingExperience, setIsAddingExperience] = useState(false);
-  const { addPlayerExperience, updatePlayerExperience, deletePlayerExperience } = useAuth();
-  const { toast } = useToast();
+  const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null);
   
-  const handleAddExperience = async (experience: Omit<PlayerExperienceType, 'id' | 'player_id'>) => {
-    try {
-      await addPlayerExperience({
-        ...experience,
-        player_id: playerId
-      });
-      
-      toast({
-        title: "Experience Added",
-        description: "Your experience has been added successfully."
-      });
-      
-      setIsAddingExperience(false);
-      window.location.reload();
-      
-    } catch (error) {
-      console.error('Error adding experience:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add experience. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const handleAddExperience = () => {
+    setIsAddingExperience(true);
   };
   
-  const handleUpdateExperience = async (id: string, data: Partial<PlayerExperienceType>) => {
-    try {
-      await updatePlayerExperience(id, data);
-      
-      toast({
-        title: "Experience Updated",
-        description: "Your experience has been updated successfully."
-      });
-      
-      setEditingExperience(null);
-      window.location.reload();
-      
-    } catch (error) {
-      console.error('Error updating experience:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update experience. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const handleCancelAdd = () => {
+    setIsAddingExperience(false);
   };
   
-  const handleDeleteExperience = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this experience?')) {
-      return;
-    }
-    
-    try {
-      await deletePlayerExperience(id);
-      
-      toast({
-        title: "Experience Deleted",
-        description: "Your experience has been deleted successfully."
-      });
-      
-      window.location.reload();
-      
-    } catch (error) {
-      console.error('Error deleting experience:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete experience. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const handleEditExperience = (experienceId: string) => {
+    setEditingExperienceId(experienceId);
   };
   
-  const isDbExperiences = experiences.length > 0 && 'id' in experiences[0];
+  const handleCancelEdit = () => {
+    setEditingExperienceId(null);
+  };
   
   return (
     <div className="space-y-6">
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Club Experience</h3>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Professional Experience</CardTitle>
+            <CardDescription>Career history and achievements</CardDescription>
+          </div>
           {isCurrentUserProfile && (
-            <Button 
-              onClick={() => setIsAddingExperience(true)} 
-              variant="outline" 
-              size="sm"
-            >
-              <Plus className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" onClick={handleAddExperience} disabled={isAddingExperience}>
+              <Plus className="mr-2 h-4 w-4" />
               Add Experience
             </Button>
           )}
-        </div>
-        
-        {isAddingExperience && (
-          <div className="mb-6 p-4 border rounded-md bg-gray-50">
-            <h4 className="font-medium mb-2">Add New Experience</h4>
-            <ExperienceForm
-              onSubmit={handleAddExperience}
-              onCancel={() => setIsAddingExperience(false)}
-            />
-          </div>
-        )}
-        
-        {editingExperience && (
-          <div className="mb-6 p-4 border rounded-md bg-gray-50">
-            <h4 className="font-medium mb-2">Edit Experience</h4>
-            <ExperienceForm
-              experience={editingExperience}
-              onSubmit={(data) => handleUpdateExperience(editingExperience.id, data)}
-              onCancel={() => setEditingExperience(null)}
-            />
-          </div>
-        )}
-        
-        <div className="space-y-6">
-          {isDbExperiences ? (
-            (experiences as PlayerExperienceType[]).map((exp) => (
-              <div key={exp.id} className="border-l-2 border-primary pl-4 pb-6">
-                <div className="flex justify-between items-start">
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {isAddingExperience && (
+            <div className="mb-6 border rounded-md p-4 bg-muted/50">
+              <div className="flex justify-between mb-4">
+                <h4 className="font-medium">Add New Experience</h4>
+                <Button variant="ghost" size="sm" onClick={handleCancelAdd}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <ExperienceForm 
+                playerId={playerId}
+                onCancel={handleCancelAdd}
+                onComplete={() => setIsAddingExperience(false)}
+              />
+            </div>
+          )}
+          
+          {experiences.length > 0 ? (
+            experiences.map((experience) => (
+              <div key={experience.id || `${experience.club}-${experience.role}`} className="border rounded-md p-4">
+                {editingExperienceId === experience.id ? (
                   <div>
-                    <h4 className="font-medium">{exp.club}</h4>
-                    <div className="text-sm text-gray-600">
-                      {exp.role} • {new Date(exp.start_date).toLocaleDateString()} to {exp.end_date ? new Date(exp.end_date).toLocaleDateString() : 'Present'}
+                    <div className="flex justify-between mb-4">
+                      <h4 className="font-medium">Edit Experience</h4>
+                      <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <p className="mt-1 text-sm">{exp.achievements}</p>
+                    <ExperienceForm 
+                      playerId={playerId}
+                      experience={experience}
+                      onCancel={handleCancelEdit}
+                      onComplete={() => setEditingExperienceId(null)}
+                    />
                   </div>
-                  
-                  {isCurrentUserProfile && (
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => setEditingExperience(exp)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleDeleteExperience(exp.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                ) : (
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold">{experience.club}</h4>
+                      {isCurrentUserProfile && (
+                        <Button variant="ghost" size="sm" onClick={() => handleEditExperience(experience.id || '')}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                  )}
-                </div>
+                    <div className="flex items-center text-sm text-muted-foreground mt-1">
+                      <Briefcase className="mr-1 h-4 w-4" />
+                      <span>{experience.role}</span>
+                    </div>
+                    
+                    <div className="flex items-center text-sm text-muted-foreground mt-1">
+                      <CalendarRange className="mr-1 h-4 w-4" />
+                      <span>
+                        {new Date(experience.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
+                        {' - '}
+                        {experience.is_current_role 
+                          ? 'Present'
+                          : experience.end_date 
+                            ? new Date(experience.end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+                            : 'Present'
+                        }
+                      </span>
+                    </div>
+                    
+                    {experience.achievements && (
+                      <div className="mt-3">
+                        <div className="flex items-center text-sm mb-1">
+                          <Trophy className="mr-1 h-4 w-4 text-amber-500" />
+                          <span className="font-medium">Achievements</span>
+                        </div>
+                        <p className="text-sm">{experience.achievements}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))
           ) : (
-            experiences.map((exp: any, index: number) => (
-              <div key={index} className="border-l-2 border-primary pl-4 pb-6">
-                <h4 className="font-medium">{exp.club}</h4>
-                <div className="text-sm text-gray-600">{exp.role} • {exp.period}</div>
-                <p className="mt-1 text-sm">{exp.achievements}</p>
-              </div>
-            ))
+            <div className="text-center py-8 text-muted-foreground">
+              No professional experience added yet.
+            </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

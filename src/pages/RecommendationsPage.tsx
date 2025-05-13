@@ -5,111 +5,53 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Award, BookOpen, Briefcase, Calendar, MapPin, Star, Tag, Zap } from 'lucide-react';
+import { Award, BookOpen, Briefcase, Calendar, MapPin, Star, Tag, Zap, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-
-type Recommendation = {
-  id: string;
-  title: string;
-  type: 'player' | 'club' | 'event' | 'course' | 'opportunity';
-  category: string;
-  description: string;
-  imageUrl?: string;
-  location?: string;
-  date?: string;
-  tags?: string[];
-  reason: string;
-};
+import { Recommendation, getRecommendations } from '@/services/recommendationService';
 
 const RecommendationsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [activeTab, setActiveTab] = useState<string>('all');
   const { toast } = useToast();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
 
-  useEffect(() => {
-    // In a real app, this would fetch from your ML recommendation API
-    // based on the user's profile and preferences
-    const fetchRecommendations = async () => {
-      setIsLoading(true);
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Mock data - in real app would come from backend
-        const mockRecommendations: Recommendation[] = [
-          {
-            id: '1',
-            title: 'Advanced Finishing Techniques',
-            type: 'course',
-            category: 'Training',
-            description: 'Master the art of clinical finishing with this comprehensive course',
-            imageUrl: 'https://images.unsplash.com/photo-1593341646782-e0b495cff86d',
-            tags: ['Technical', 'Attacking', 'Shooting'],
-            reason: 'Based on your position and skill development goals'
-          },
-          {
-            id: '2',
-            title: 'Youth Tournament - Barcelona',
-            type: 'event',
-            category: 'Competition',
-            description: 'International youth tournament with scouts from top European clubs',
-            imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55',
-            location: 'Barcelona, Spain',
-            date: 'June 15-20, 2025',
-            reason: 'Matches your age group and performance level'
-          },
-          {
-            id: '3',
-            title: 'FC Ajax Youth Academy',
-            type: 'club',
-            category: 'Academy',
-            description: 'Renowned for developing technical players with strong fundamentals',
-            imageUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/79/Ajax_Amsterdam.svg/1200px-Ajax_Amsterdam.svg.png',
-            location: 'Amsterdam, Netherlands',
-            reason: 'Aligns with your playing style and development needs'
-          },
-          {
-            id: '4',
-            title: 'Mental Strength Coach - Sarah Williams',
-            type: 'player',
-            category: 'Coaching',
-            description: 'Sports psychologist specializing in young athlete mental preparation',
-            location: 'Online Sessions Available',
-            reason: 'Could help improve your mental game based on recent performances'
-          },
-          {
-            id: '5',
-            title: 'Trial Opportunity - Brighton & Hove U23',
-            type: 'opportunity',
-            category: 'Trial',
-            description: 'Week-long trial with Premier League club\'s U23 team',
-            location: 'Brighton, UK',
-            date: 'July 10-17, 2025',
-            reason: 'Matches your skill level and career aspirations'
-          }
-        ];
-        
-        setRecommendations(mockRecommendations);
-      } catch (error) {
-        console.error('Error fetching recommendations:', error);
-        toast({
-          title: "Error loading recommendations",
-          description: "Failed to load recommendation data. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+  const fetchRecommendations = async () => {
+    setIsLoading(true);
+    try {
+      let fetchedRecommendations: Recommendation[];
+      
+      if (user) {
+        // Use our new recommendation service if user is logged in
+        fetchedRecommendations = await getRecommendations(user.id, 10);
+      } else {
+        // Fall back to mock recommendations for demo purposes
+        fetchedRecommendations = mockRecommendations;
       }
-    };
-    
+      
+      setRecommendations(fetchedRecommendations);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      toast({
+        title: "Error loading recommendations",
+        description: "Failed to load recommendation data. Please try again later.",
+        variant: "destructive",
+      });
+      
+      // Fall back to mock data on error
+      setRecommendations(mockRecommendations);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchRecommendations();
-  }, [toast]);
+  }, [user, toast]);
   
   const filteredRecommendations = activeTab === 'all' 
     ? recommendations 
@@ -134,11 +76,23 @@ const RecommendationsPage = () => {
   return (
     <Layout>
       <div className="container mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Personalized Recommendations</h1>
-          <p className="text-muted-foreground">
-            Tailored recommendations based on your profile, activity, and goals
-          </p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Personalized Recommendations</h1>
+            <p className="text-muted-foreground">
+              Tailored recommendations based on your profile, activity, and goals
+            </p>
+          </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={fetchRecommendations} 
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
         
         <Tabs defaultValue="all" className="mb-8" onValueChange={setActiveTab}>
@@ -148,6 +102,8 @@ const RecommendationsPage = () => {
             <TabsTrigger value="event">Events</TabsTrigger>
             <TabsTrigger value="course">Courses</TabsTrigger>
             <TabsTrigger value="opportunity">Opportunities</TabsTrigger>
+            <TabsTrigger value="player">Players</TabsTrigger>
+            <TabsTrigger value="coach">Coaches</TabsTrigger>
           </TabsList>
           
           <TabsContent value={activeTab}>
@@ -183,9 +139,12 @@ const RecommendationsPage = () => {
                           alt={rec.title} 
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-2 right-2">
+                        <div className="absolute top-2 right-2 flex gap-2">
                           <Badge className="bg-background/80 text-foreground">
                             {rec.type.charAt(0).toUpperCase() + rec.type.slice(1)}
+                          </Badge>
+                          <Badge className="bg-primary">
+                            {rec.score}% Match
                           </Badge>
                         </div>
                       </div>
@@ -239,7 +198,15 @@ const RecommendationsPage = () => {
                       </div>
                     </CardContent>
                     <CardFooter className="border-t bg-muted/20 pt-3 pb-3">
-                      <Button size="sm" className="w-full">Explore This Recommendation</Button>
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        asChild
+                      >
+                        <a href={`/${rec.type}s/${rec.id}`}>
+                          Explore This Recommendation
+                        </a>
+                      </Button>
                     </CardFooter>
                   </Card>
                 ))
@@ -255,5 +222,64 @@ const RecommendationsPage = () => {
     </Layout>
   );
 };
+
+// Mock recommendations for development and fallback purposes
+const mockRecommendations: Recommendation[] = [
+  {
+    id: '1',
+    title: 'Advanced Finishing Techniques',
+    type: 'course',
+    category: 'Training',
+    description: 'Master the art of clinical finishing with this comprehensive course',
+    imageUrl: 'https://images.unsplash.com/photo-1593341646782-e0b495cff86d',
+    tags: ['Technical', 'Attacking', 'Shooting'],
+    reason: 'Based on your position and skill development goals',
+    score: 92
+  },
+  {
+    id: '2',
+    title: 'Youth Tournament - Barcelona',
+    type: 'event',
+    category: 'Competition',
+    description: 'International youth tournament with scouts from top European clubs',
+    imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55',
+    location: 'Barcelona, Spain',
+    date: 'June 15-20, 2025',
+    reason: 'Matches your age group and performance level',
+    score: 88
+  },
+  {
+    id: '3',
+    title: 'FC Ajax Youth Academy',
+    type: 'club',
+    category: 'Academy',
+    description: 'Renowned for developing technical players with strong fundamentals',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/79/Ajax_Amsterdam.svg/1200px-Ajax_Amsterdam.svg.png',
+    location: 'Amsterdam, Netherlands',
+    reason: 'Aligns with your playing style and development needs',
+    score: 86
+  },
+  {
+    id: '4',
+    title: 'Mental Strength Coach - Sarah Williams',
+    type: 'player',
+    category: 'Coaching',
+    description: 'Sports psychologist specializing in young athlete mental preparation',
+    location: 'Online Sessions Available',
+    reason: 'Could help improve your mental game based on recent performances',
+    score: 84
+  },
+  {
+    id: '5',
+    title: 'Trial Opportunity - Brighton & Hove U23',
+    type: 'opportunity',
+    category: 'Trial',
+    description: 'Week-long trial with Premier League club\'s U23 team',
+    location: 'Brighton, UK',
+    date: 'July 10-17, 2025',
+    reason: 'Matches your skill level and career aspirations',
+    score: 83
+  }
+];
 
 export default RecommendationsPage;

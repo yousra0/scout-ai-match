@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import PlayerProfilePage from "./pages/PlayerProfilePage";
 import ScoutingPage from "./pages/ScoutingPage";
@@ -47,6 +48,7 @@ const AppRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
       <Route path="/register" element={user ? <Navigate to="/" /> : <RegisterPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       
       {/* Main Navigation Pages */}
       <Route path="/explore" element={<ScoutingPage />} />
