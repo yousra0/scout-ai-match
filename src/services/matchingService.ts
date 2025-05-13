@@ -8,16 +8,20 @@ import {
 } from '@/utils/similarityModels';
 import {
   mockPlayers,
-  mockCoaches,
-  mockClubs,
-  mockAgents,
-  mockSponsors
 } from '@/components/player/PlayerData';
+import { 
+  mockCoaches, 
+  mockClubs, 
+  mockAgents, 
+  mockSponsors, 
+  mockEquipmentSuppliers 
+} from '@/components/stakeholders/MockData';
+import { StakeholderType } from '@/services/stakeholderService';
 
 export interface Match {
   id: string;
   name: string;
-  type: 'player' | 'coach' | 'club' | 'agent' | 'sponsor' | 'equipment_supplier';
+  type: "player" | "coach" | "club" | "agent" | "sponsor" | "equipment_supplier";
   matchScore: number;
   description: string;
   avatarUrl?: string;
@@ -245,13 +249,14 @@ const getMockMatches = (type: string = 'all', limit: number = 6): Match[] => {
     ...mockCoaches,
     ...mockClubs,
     ...mockAgents,
-    ...mockSponsors
+    ...mockSponsors,
+    ...mockEquipmentSuppliers
   ] as Match[];
   
   // Filter by type if specified
   const filteredMatches = type === 'all' 
     ? allMockMatches 
-    : allMockMatches.filter(match => match.type === type);
+    : allMockMatches.filter(match => match.type === type as StakeholderType);
   
   // Return only the requested number of matches
   return filteredMatches.slice(0, limit);

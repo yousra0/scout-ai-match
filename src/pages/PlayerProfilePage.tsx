@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -45,7 +46,21 @@ const PlayerProfilePage = () => {
           .single();
         
         if (profileError) {
-          throw profileError;
+          // If no data is found in Supabase, use mock data
+          console.log('Using mock player data');
+          setPlayerProfile({
+            id,
+            full_name: playerData.name,
+            avatar_url: playerData.avatar,
+            position: playerData.position,
+            age: playerData.age,
+            country: playerData.country,
+            club: playerData.club,
+            description: playerData.description,
+          });
+          setPlayerExperiences(playerData.experience || []);
+          setLoading(false);
+          return;
         }
         
         if (profileData) {
@@ -74,6 +89,19 @@ const PlayerProfilePage = () => {
           description: 'Failed to load player profile',
           variant: 'destructive',
         });
+        
+        // Fallback to mock data
+        setPlayerProfile({
+          id,
+          full_name: playerData.name,
+          avatar_url: playerData.avatar,
+          position: playerData.position,
+          age: playerData.age,
+          country: playerData.country,
+          club: playerData.club,
+          description: playerData.description,
+        });
+        setPlayerExperiences(playerData.experience || []);
       } finally {
         setLoading(false);
       }
