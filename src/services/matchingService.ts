@@ -143,7 +143,7 @@ export const findMatchesKNN = async (
       return {
         id: profileData.id,
         name: profileData.full_name,
-        type: profileData.user_type as any,
+        type: profileData.user_type as Match['type'],
         matchScore: Math.round((1 - neighbor.distance) * 100), // Convert distance back to similarity score
         description: details?.description || 'No description available',
         avatarUrl: profileData.avatar_url,
@@ -215,7 +215,7 @@ export const findMatchesCosineSimilarity = async (
       return {
         id: profileData.id,
         name: profileData.full_name,
-        type: profileData.user_type as any,
+        type: profileData.user_type as Match['type'],
         matchScore: Math.round(match.similarity * 100), // Convert from 0-1 to percentage
         description: details?.description || 'No description available',
         avatarUrl: profileData.avatar_url,
@@ -246,7 +246,7 @@ const getMockMatches = (type: string = 'all', limit: number = 6): Match[] => {
     ...mockClubs,
     ...mockAgents,
     ...mockSponsors
-  ];
+  ] as Match[];
   
   // Filter by type if specified
   const filteredMatches = type === 'all' 

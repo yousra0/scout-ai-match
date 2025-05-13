@@ -99,7 +99,7 @@ export const mockPlayers = [
   {
     id: '101',
     name: 'Emma Williams',
-    type: 'player',
+    type: 'player' as const,
     matchScore: 94,
     description: 'Versatile midfielder with excellent vision and passing ability',
     position: 'Midfielder',
@@ -110,7 +110,7 @@ export const mockPlayers = [
   {
     id: '102',
     name: 'Carlos Rodriguez',
-    type: 'player',
+    type: 'player' as const,
     matchScore: 92,
     description: 'Skilled winger known for speed and dribbling abilities',
     position: 'Right Wing',
@@ -121,7 +121,7 @@ export const mockPlayers = [
   {
     id: '103',
     name: 'Sophia Chen',
-    type: 'player',
+    type: 'player' as const,
     matchScore: 89,
     description: 'Defensive midfielder with strong tackling and positional awareness',
     position: 'Defensive Midfielder',
@@ -132,7 +132,7 @@ export const mockPlayers = [
   {
     id: '104',
     name: 'Jamal Thompson',
-    type: 'player',
+    type: 'player' as const,
     matchScore: 87,
     description: 'Athletic goalkeeper with excellent reflexes and distribution',
     position: 'Goalkeeper',
@@ -143,7 +143,7 @@ export const mockPlayers = [
   {
     id: '105',
     name: 'Lena Müller',
-    type: 'player',
+    type: 'player' as const,
     matchScore: 86,
     description: 'Versatile defender capable of playing multiple positions',
     position: 'Center Back',
@@ -158,7 +158,7 @@ export const mockCoaches = [
   {
     id: '201',
     name: 'Jurgen Klopp',
-    type: 'coach',
+    type: 'coach' as const,
     matchScore: 96,
     description: 'Specializes in high-pressing systems and player development',
     skills: ['Tactical Analysis', 'Player Development', 'Motivational Leadership'],
@@ -168,7 +168,7 @@ export const mockCoaches = [
   {
     id: '202',
     name: 'Maria Gonzalez',
-    type: 'coach',
+    type: 'coach' as const,
     matchScore: 91,
     description: 'Expert in technical skills training and youth development',
     skills: ['Technical Training', 'Youth Development', 'Skill Analysis'],
@@ -178,7 +178,7 @@ export const mockCoaches = [
   {
     id: '203',
     name: 'Akira Tanaka',
-    type: 'coach',
+    type: 'coach' as const,
     matchScore: 88,
     description: 'Specializes in tactical flexibility and game strategy',
     skills: ['Game Strategy', 'Tactical Flexibility', 'Opposition Analysis'],
@@ -188,7 +188,7 @@ export const mockCoaches = [
   {
     id: '204',
     name: 'Sarah Johnson',
-    type: 'coach',
+    type: 'coach' as const,
     matchScore: 86,
     description: 'Mental conditioning coach focusing on performance psychology',
     skills: ['Mental Conditioning', 'Performance Psychology', 'Stress Management'],
@@ -198,7 +198,7 @@ export const mockCoaches = [
   {
     id: '205',
     name: 'Antoine Dubois',
-    type: 'coach',
+    type: 'coach' as const,
     matchScore: 82,
     description: 'Specializes in physical conditioning and injury prevention',
     skills: ['Physical Conditioning', 'Injury Prevention', 'Recovery Protocols'],
@@ -212,7 +212,7 @@ export const mockClubs = [
   {
     id: '301',
     name: 'FC Bayern Munich',
-    type: 'club',
+    type: 'club' as const,
     matchScore: 93,
     description: 'Elite European club known for developing young talent',
     location: 'Munich, Germany',
@@ -221,7 +221,7 @@ export const mockClubs = [
   {
     id: '302',
     name: 'Ajax Amsterdam',
-    type: 'club',
+    type: 'club' as const,
     matchScore: 91,
     description: 'Famous for their youth academy and technical development',
     location: 'Amsterdam, Netherlands',
@@ -230,7 +230,7 @@ export const mockClubs = [
   {
     id: '303',
     name: 'Boca Juniors',
-    type: 'club',
+    type: 'club' as const,
     matchScore: 89,
     description: 'Renowned South American club with passionate fanbase',
     location: 'Buenos Aires, Argentina',
@@ -239,7 +239,7 @@ export const mockClubs = [
   {
     id: '304',
     name: 'Portland Timbers',
-    type: 'club',
+    type: 'club' as const,
     matchScore: 87,
     description: 'MLS club with strong community ties and development focus',
     location: 'Portland, USA',
@@ -248,7 +248,7 @@ export const mockClubs = [
   {
     id: '305',
     name: 'Kashima Antlers',
-    type: 'club',
+    type: 'club' as const,
     matchScore: 85,
     description: 'Leading J-League club with modern facilities and training methods',
     location: 'Kashima, Japan',
@@ -261,7 +261,7 @@ export const mockAgents = [
   {
     id: '401',
     name: 'Daniel Richardson',
-    type: 'agent',
+    type: 'agent' as const,
     matchScore: 94,
     description: 'Specializes in European transfers and contract negotiation',
     location: 'London, UK',
@@ -271,7 +271,7 @@ export const mockAgents = [
   {
     id: '402',
     name: 'Isabella Martinez',
-    type: 'agent',
+    type: 'agent' as const,
     matchScore: 92,
     description: 'Focuses on South American talent development and transfers',
     location: 'São Paulo, Brazil',
@@ -281,7 +281,7 @@ export const mockAgents = [
   {
     id: '403',
     name: 'Omar Al-Farsi',
-    type: 'agent',
+    type: 'agent' as const,
     matchScore: 89,
     description: 'Specializes in Middle Eastern and Asian football markets',
     location: 'Dubai, UAE',
@@ -291,7 +291,7 @@ export const mockAgents = [
   {
     id: '404',
     name: 'Victoria Chen',
-    type: 'agent',
+    type: 'agent' as const,
     matchScore: 87,
     description: 'Expert in digital marketing and personal brand development',
     location: 'Singapore',
@@ -301,7 +301,7 @@ export const mockAgents = [
   {
     id: '405',
     name: 'Michael O\'Sullivan',
-    type: 'agent',
+    type: 'agent' as const,
     matchScore: 85,
     description: 'Specializes in youth player development and first contracts',
     location: 'Dublin, Ireland',
@@ -315,7 +315,7 @@ export const mockSponsors = [
   {
     id: '501',
     name: 'SportTech International',
-    type: 'sponsor',
+    type: 'sponsor' as const,
     matchScore: 90,
     description: 'Global sports equipment manufacturer looking for rising stars',
     location: 'Beaverton, USA',
@@ -324,7 +324,7 @@ export const mockSponsors = [
   {
     id: '502',
     name: 'GreenEnergy Drinks',
-    type: 'sponsor',
+    type: 'sponsor' as const,
     matchScore: 88,
     description: 'Eco-friendly sports beverage company targeting young athletes',
     location: 'Stockholm, Sweden',
@@ -333,7 +333,7 @@ export const mockSponsors = [
   {
     id: '503',
     name: 'Horizon Airlines',
-    type: 'sponsor',
+    type: 'sponsor' as const,
     matchScore: 86,
     description: 'International airline looking to expand sports partnerships',
     location: 'Dubai, UAE',
@@ -342,7 +342,7 @@ export const mockSponsors = [
   {
     id: '504',
     name: 'Financial Future',
-    type: 'sponsor',
+    type: 'sponsor' as const,
     matchScore: 84,
     description: 'Investment firm specializing in athlete financial planning',
     location: 'New York, USA',
@@ -351,7 +351,7 @@ export const mockSponsors = [
   {
     id: '505',
     name: 'Global Tech Solutions',
-    type: 'sponsor',
+    type: 'sponsor' as const,
     matchScore: 82,
     description: 'Technology company seeking athletes for innovation partnerships',
     location: 'Seoul, South Korea',

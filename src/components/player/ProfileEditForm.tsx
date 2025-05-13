@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -147,7 +148,7 @@ const ProfileEditForm = ({ playerData, onSave, onCancel }: ProfileEditFormProps)
             <SelectValue placeholder="Select country" />
           </SelectTrigger>
           <SelectContent>
-            {countries.map((country: Country) => (
+            {(countries as Country[]).map((country: Country) => (
               <SelectItem key={country.code} value={country.code}>
                 {country.name}
               </SelectItem>
