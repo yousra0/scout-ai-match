@@ -1,75 +1,108 @@
 
-import { Mail, Phone, ExternalLink, MapPin } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Mail, Phone, ExternalLink, MapPin, UserIcon, Flag, Calendar, Ruler, Scale, Footprints } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import PlayerAttributes from './PlayerAttributes';
 
 interface PlayerOverviewProps {
-  bio: string;
-  attributes: {
-    pace: number;
-    shooting: number;
-    passing: number;
-    dribbling: number;
-    defending: number;
-    physical: number;
-  };
-  radarData: Array<{
-    subject: string;
-    A: number;
-    fullMark: number;
-  }>;
-  contact?: {
-    email?: string;
-    phone?: string;
-    website?: string;
-    location?: string;
-  };
+  description: string;
+  age: string | number;
+  position: string;
+  height: string;
+  weight: string;
+  foot: string;
+  nationality: string;
 }
 
-const PlayerOverview = ({ bio, attributes, radarData, contact = {} }: PlayerOverviewProps) => {
+const PlayerOverview = ({
+  description,
+  age,
+  position,
+  height,
+  weight,
+  foot,
+  nationality
+}: PlayerOverviewProps) => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">About</h3>
-        <p className="text-gray-600">{bio}</p>
+        <h3 className="text-lg font-semibold mb-2">Bio</h3>
+        <p className="text-muted-foreground">{description}</p>
       </div>
       
-      <PlayerAttributes attributes={attributes} radarData={radarData} />
-      
       <div>
-        <h3 className="text-lg font-semibold mb-3">Contact Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {contact.email && (
-            <Button variant="outline" className="justify-start" onClick={() => window.location.href = `mailto:${contact.email}`}>
-              <Mail className="h-4 w-4 mr-2" />
-              {contact.email}
-            </Button>
-          )}
+        <h3 className="text-lg font-semibold mb-3">Player Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="py-4 px-5">
+              <CardTitle className="flex items-center text-sm font-medium">
+                <Calendar className="h-4 w-4 mr-2 text-primary" />
+                Age
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-0 px-5 pb-4">
+              <div className="text-lg font-semibold">{age}</div>
+            </CardContent>
+          </Card>
           
-          {contact.phone && (
-            <Button variant="outline" className="justify-start" onClick={() => window.location.href = `tel:${contact.phone}`}>
-              <Phone className="h-4 w-4 mr-2" />
-              {contact.phone}
-            </Button>
-          )}
+          <Card>
+            <CardHeader className="py-4 px-5">
+              <CardTitle className="flex items-center text-sm font-medium">
+                <UserIcon className="h-4 w-4 mr-2 text-primary" />
+                Position
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-0 px-5 pb-4">
+              <div className="text-lg font-semibold">{position}</div>
+            </CardContent>
+          </Card>
           
-          {contact.website && (
-            <Button variant="outline" className="justify-start" onClick={() => window.open(contact.website, '_blank')}>
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Website
-            </Button>
-          )}
+          <Card>
+            <CardHeader className="py-4 px-5">
+              <CardTitle className="flex items-center text-sm font-medium">
+                <Flag className="h-4 w-4 mr-2 text-primary" />
+                Nationality
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-0 px-5 pb-4">
+              <div className="text-lg font-semibold">{nationality}</div>
+            </CardContent>
+          </Card>
           
-          {contact.location && (
-            <Button variant="outline" className="justify-start">
-              <MapPin className="h-4 w-4 mr-2" />
-              {contact.location}
-            </Button>
-          )}
+          <Card>
+            <CardHeader className="py-4 px-5">
+              <CardTitle className="flex items-center text-sm font-medium">
+                <Ruler className="h-4 w-4 mr-2 text-primary" />
+                Height
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-0 px-5 pb-4">
+              <div className="text-lg font-semibold">{height}</div>
+            </CardContent>
+          </Card>
           
-          {!contact.email && !contact.phone && !contact.website && !contact.location && (
-            <p className="text-gray-500 col-span-2">No contact information available.</p>
-          )}
+          <Card>
+            <CardHeader className="py-4 px-5">
+              <CardTitle className="flex items-center text-sm font-medium">
+                <Scale className="h-4 w-4 mr-2 text-primary" />
+                Weight
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-0 px-5 pb-4">
+              <div className="text-lg font-semibold">{weight}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="py-4 px-5">
+              <CardTitle className="flex items-center text-sm font-medium">
+                <Footprints className="h-4 w-4 mr-2 text-primary" />
+                Preferred Foot
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-0 px-5 pb-4">
+              <div className="text-lg font-semibold">{foot}</div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

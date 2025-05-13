@@ -24,6 +24,11 @@ export const cosineSimilarity = (a: number[], b: number[]): number => {
     throw new Error('Vectors must have the same dimensions');
   }
   
+  // Handle empty vectors to avoid NaN
+  if (a.length === 0 || b.length === 0) {
+    return 0;
+  }
+  
   // Calculate dot product
   const dotProduct = a.reduce((sum, value, index) => sum + value * b[index], 0);
   
@@ -47,6 +52,11 @@ export const kNearestNeighbors = (
   k: number,
   distanceFunction: (a: number[], b: number[]) => number = euclideanDistance
 ): Array<{ id: string; distance: number }> => {
+  // Check for empty data
+  if (dataPoints.length === 0) {
+    return [];
+  }
+  
   // Calculate distances
   const distances = dataPoints.map(point => ({
     id: point.id,
@@ -54,16 +64,18 @@ export const kNearestNeighbors = (
   }));
   
   // Sort by distance (ascending for Euclidean, descending for Cosine)
-  const sortedDistances = distanceFunction === euclideanDistance
-    ? distances.sort((a, b) => a.distance - b.distance)
-    : distances.sort((a, b) => b.distance - a.distance);
+  const sortedDistances = distances.sort((a, b) => a.distance - b.distance);
   
-  // Return k nearest neighbors
-  return sortedDistances.slice(0, k);
+  // Return k nearest neighbors or all if fewer than k
+  return sortedDistances.slice(0, Math.min(k, sortedDistances.length));
 };
 
 // Normalize a feature vector to have values between 0 and 1
 export const normalizeFeatures = (features: number[]): number[] => {
+  if (features.length === 0) {
+    return [];
+  }
+  
   const min = Math.min(...features);
   const max = Math.max(...features);
   
@@ -76,16 +88,26 @@ export const normalizeFeatures = (features: number[]): number[] => {
 
 // Convert user profile to feature vector
 export const profileToFeatureVector = (profile: any): number[] => {
-  // This function needs to extract numerical features from a user profile
-  // This is a simplified example - adapt based on your specific user data structure
+  // This function extracts numerical features from a user profile
+  if (!profile) {
+    return [0, 0, 0, 0, 0]; // Default empty vector
+  }
+  
   const features: number[] = [];
+  const userType = profile.user_type;
+  
+  // Common features across all user types
+  // Normalize ID to a simple hash number (this is just for demo purposes)
+  const idHash = hashStringToNumber(profile.id) / 1000000;
+  features.push(idHash % 1); // Keep it between 0 and 1
   
   // Example: Extract player attributes
-  if (profile.user_type === 'player') {
+  if (userType === 'player') {
+    const playerDetails = profile.player_details || {};
+    
     // Age (normalized to 0-1 range assuming players are between 15-40)
-    const ageNorm = profile.player_details?.age 
-      ? Math.max(0, Math.min(1, (profile.player_details.age - 15) / 25)) 
-      : 0.5;
+    const age = playerDetails.age || 20;
+    const ageNorm = Math.max(0, Math.min(1, (age - 15) / 25));
     features.push(ageNorm);
     
     // Position encoded (simplified)
@@ -93,31 +115,124 @@ export const profileToFeatureVector = (profile: any): number[] => {
       'goalkeeper': 0.1,
       'defender': 0.3,
       'midfielder': 0.6,
-      'forward': 0.9
+      'forward': 0.9,
+      'striker': 1.0
     };
-    const positionValue = profile.player_details?.position 
-      ? (positionMap[profile.player_details.position.toLowerCase()] || 0.5)
-      : 0.5;
+    
+    const position = playerDetails.position?.toLowerCase() || '';
+    const positionValue = positionMap[position] || 0.5;
     features.push(positionValue);
     
-    // Add more features based on your data model
-    // Example: skill levels, experience, etc.
+    // Country/Region value (simplified - just using string hash)
+    const countryValue = playerDetails.country 
+      ? hashStringToNumber(playerDetails.country) % 1
+      : 0.5;
+    features.push(countryValue);
     
-  } else if (profile.user_type === 'club') {
-    // Club-specific features
-    // Example: league level, budget, etc.
+    // Club value (simplified)
+    const clubValue = playerDetails.club
+      ? hashStringToNumber(playerDetails.club) % 1
+      : 0.5;
+    features.push(clubValue);
     
-  } else if (profile.user_type === 'coach') {
-    // Coach-specific features
-    // Example: experience years, specialization, etc.
+  } else if (userType === 'club') {
+    const clubDetails = profile.club_details || {};
     
-  } else if (profile.user_type === 'agent') {
-    // Agent-specific features
+    // League level
+    const leagueValue = clubDetails.league
+      ? hashStringToNumber(clubDetails.league) % 1
+      : 0.5;
+    features.push(leagueValue);
+    
+    // Country/Region
+    const countryValue = clubDetails.country 
+      ? hashStringToNumber(clubDetails.country) % 1
+      : 0.5;
+    features.push(countryValue);
+    
+    // Club age/establishment (normalized 0-1 assuming 0-150 years)
+    const foundedYear = clubDetails.founded_year || 2000;
+    const currentYear = new Date().getFullYear();
+    const ageNorm = Math.min(1, Math.max(0, (currentYear - foundedYear) / 150));
+    features.push(ageNorm);
+    
+    // Placeholder for other features
+    features.push(0.5);
+    
+  } else if (userType === 'coach') {
+    const coachDetails = profile.coach_details || {};
+    
+    // Specialization
+    const specializationValue = coachDetails.specialization
+      ? hashStringToNumber(coachDetails.specialization) % 1
+      : 0.5;
+    features.push(specializationValue);
+    
+    // Experience (assuming text like "5 years", extract number)
+    let experienceYears = 0;
+    if (coachDetails.experience) {
+      const match = coachDetails.experience.match(/\d+/);
+      if (match) {
+        experienceYears = parseInt(match[0], 10);
+      }
+    }
+    const experienceNorm = Math.min(1, Math.max(0, experienceYears / 30));
+    features.push(experienceNorm);
+    
+    // Current club
+    const clubValue = coachDetails.current_club
+      ? hashStringToNumber(coachDetails.current_club) % 1
+      : 0.5;
+    features.push(clubValue);
+    
+    // Coaching philosophy
+    const philosophyValue = coachDetails.coaching_philosophy
+      ? hashStringToNumber(coachDetails.coaching_philosophy) % 1
+      : 0.5;
+    features.push(philosophyValue);
+    
+  } else if (userType === 'agent') {
+    const agentDetails = profile.agent_details || {};
+    
+    // Agency
+    const agencyValue = agentDetails.agency
+      ? hashStringToNumber(agentDetails.agency) % 1
+      : 0.5;
+    features.push(agencyValue);
+    
+    // Specialization
+    const specializationValue = agentDetails.specialization
+      ? hashStringToNumber(agentDetails.specialization) % 1
+      : 0.5;
+    features.push(specializationValue);
+    
+    // Experience years (normalized 0-1 assuming 0-30 years)
+    const experienceYears = agentDetails.experience_years || 5;
+    const experienceNorm = Math.min(1, Math.max(0, experienceYears / 30));
+    features.push(experienceNorm);
+    
+    // Client count (normalized 0-1 assuming 0-100 clients)
+    const clientCount = agentDetails.clients_count || 10;
+    const clientsNorm = Math.min(1, Math.max(0, clientCount / 100));
+    features.push(clientsNorm);
+  } else {
+    // For other user types, add placeholder features
+    features.push(0.5, 0.5, 0.5, 0.5);
   }
   
-  // Add more generic features applicable to all user types
-  
   return features;
+};
+
+// Simple string hash function for demo purposes
+const hashStringToNumber = (str: string): number => {
+  if (!str) return 0;
+  
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
 };
 
 // Calculate match score between two profiles
@@ -141,7 +256,8 @@ export const calculateMatchScore = (
     // For Euclidean distance, closer to 0 is better
     const distance = euclideanDistance(vectorA, vectorB);
     // Normalize to 0-100 score (inverted, since lower distance is better)
-    // Assuming max possible distance is 1 (for normalized features)
-    return Math.round((1 - Math.min(1, distance)) * 100);
+    // Assuming max possible distance is sqrt(dimensions) for normalized features
+    const maxDistance = Math.sqrt(vectorA.length);
+    return Math.round((1 - Math.min(1, distance / maxDistance)) * 100);
   }
 };

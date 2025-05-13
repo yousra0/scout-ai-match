@@ -180,7 +180,7 @@ const PlayerProfilePage = () => {
         <div className="bg-card rounded-lg shadow-sm border p-6">
           <h2 className="text-2xl font-bold mb-6">Edit Profile</h2>
           <ProfileEditForm 
-            profile={playerProfile}
+            playerData={playerProfile}
             onSave={handleSaveEdit}
             onCancel={handleCancelEdit}
           />
@@ -223,11 +223,35 @@ const PlayerProfilePage = () => {
                 </TabsContent>
                 
                 <TabsContent value="stats" className="space-y-8">
-                  <PlayerStats stats={playerData.stats} />
+                  <PlayerStats 
+                    statsData={[
+                      { label: "Goals", value: 12, changeDirection: "up", changeValue: 3 },
+                      { label: "Assists", value: 8, changeDirection: "up", changeValue: 2 },
+                      { label: "Matches", value: 28, changeDirection: "neutral" },
+                      { label: "Minutes Played", value: 2340, changeDirection: "up", changeValue: 340 },
+                      { label: "Yellow Cards", value: 3, changeDirection: "down", changeValue: 1 },
+                      { label: "Red Cards", value: 0, changeDirection: "neutral" },
+                    ]}
+                    recentPerformance={[
+                      { date: "2024-05-08", opponent: "FC Barcelona", result: "W 2-1", goals: 1, assists: 0, rating: 8.4 },
+                      { date: "2024-05-03", opponent: "Real Madrid", result: "D 1-1", goals: 0, assists: 1, rating: 7.9 },
+                      { date: "2024-04-27", opponent: "Atletico Madrid", result: "L 0-2", goals: 0, assists: 0, rating: 6.5 },
+                    ]}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="attributes" className="space-y-8">
-                  <PlayerAttributes attributes={playerData.attributes} />
+                  <PlayerAttributes 
+                    attributes={playerData.attributes}
+                    radarData={[
+                      { subject: 'Pace', A: 80, fullMark: 100 },
+                      { subject: 'Shooting', A: 75, fullMark: 100 },
+                      { subject: 'Passing', A: 82, fullMark: 100 },
+                      { subject: 'Dribbling', A: 85, fullMark: 100 },
+                      { subject: 'Defending', A: 45, fullMark: 100 },
+                      { subject: 'Physical', A: 68, fullMark: 100 },
+                    ]}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="experience" className="space-y-8">

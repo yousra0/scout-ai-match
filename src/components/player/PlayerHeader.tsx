@@ -3,101 +3,131 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bookmark, Flag, Mail, MapPin, MessageSquare } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Edit, Bookmark, Flag, MessageSquare, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface PlayerHeaderProps {
-  player: {
-    name: string;
-    position: string;
-    age: number;
-    nationality: string;
-    avatarUrl: string;
-    location: string;
-    lastActive: string;
-    matchPercentage: number;
-    id?: string;
-  };
+  name: string;
+  position: string;
+  club: string;
+  country: string;
+  avatarUrl?: string;
+  verified: boolean;
+  isCurrentUserProfile: boolean;
+  onEditClick: () => void;
 }
 
-const PlayerHeader = ({ player }: PlayerHeaderProps) => {
+const PlayerHeader = ({ 
+  name, 
+  position, 
+  club, 
+  country, 
+  avatarUrl, 
+  verified, 
+  isCurrentUserProfile,
+  onEditClick 
+}: PlayerHeaderProps) => {
   const [isSaved, setIsSaved] = useState(false);
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const handleMessageClick = () => {
+  const handleSaveProfile = () => {
+    setIsSaved(!isSaved);
+    
+    toast({
+      title: isSaved ? "Removed from saved" : "Profile saved",
+      description: isSaved 
+        ? "This profile has been removed from your saved list." 
+        : "This profile has been added to your saved list.",
+    });
+  };
+
+  const handleShareProfile = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${name} - Football Profile`,
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Link copied",
+        description: "Profile link copied to clipboard.",
+      });
+    }
+  };
+
+  const handleContactPlayer = () => {
     if (!user) {
       toast({
-        title: "Authentication required",
-        description: "Please sign in to send messages",
+        title: "Sign in required",
+        description: "Please sign in to contact this player.",
         variant: "destructive"
       });
-      navigate('/login');
       return;
     }
     
-    // Navigate to messaging with pre-selected recipient
-    navigate(`/messaging?recipient=${player.id}`);
+    toast({
+      title: "Message sent",
+      description: `Your interest has been communicated to ${name}.`,
+    });
   };
 
   return (
-    <div className="col-span-1 md:col-span-3 flex flex-col items-center text-center space-y-4">
-      <Avatar className="h-32 w-32 border-4 border-primary/10">
-        <AvatarImage src={player.avatarUrl} alt={player.name} />
-        <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+    <div className="flex flex-col md:flex-row gap-6 items-center md:items-start pb-6 border-b">
+      <Avatar className="h-24 w-24 md:h-32 md:w-32 border">
+        <AvatarImage src={avatarUrl} alt={name} />
+        <AvatarFallback>{name.charAt(0)}</AvatarFallback>
       </Avatar>
       
-      <div>
-        <h1 className="text-xl font-bold">{player.name}</h1>
-        <p className="text-gray-500">{player.position}</p>
-      </div>
-      
-      <div className="flex flex-wrap justify-center gap-2">
-        <Badge variant="secondary" className="bg-primary/10 text-primary">
-          {player.position}
-        </Badge>
-        <Badge variant="outline">
-          {player.age} years
-        </Badge>
-        <Badge variant="outline">
-          <Flag className="h-3 w-3 mr-1" />
-          {player.nationality}
-        </Badge>
-      </div>
-      
-      <div className="flex flex-col w-full space-y-2">
-        <Button onClick={handleMessageClick}>
-          <MessageSquare className="h-4 w-4 mr-2" />
-          Message
-        </Button>
-        <Button 
-          variant="outline"
-          onClick={() => setIsSaved(!isSaved)}
-        >
-          {isSaved ? (
-            <>
-              <Bookmark className="h-4 w-4 mr-2 fill-primary" />
-              Saved
-            </>
+      <div className="flex-1 text-center md:text-left">
+        <div className="flex flex-col md:flex-row md:items-center gap-2">
+          <h1 className="text-2xl font-bold">{name}</h1>
+          {verified && (
+            <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 ml-0 md:ml-2">
+              Verified
+            </Badge>
+          )}
+        </div>
+        
+        <div className="mt-1 text-muted-foreground space-y-1">
+          <div>{position}</div>
+          <div>{club} • {country}</div>
+        </div>
+        
+        <div className="flex flex-wrap gap-2 mt-4 justify-center md:justify-start">
+          {isCurrentUserProfile ? (
+            <Button onClick={onEditClick} className="gap-1.5">
+              <Edit className="h-4 w-4" />
+              Edit Profile
+            </Button>
           ) : (
             <>
-              <Bookmark className="h-4 w-4 mr-2" />
-              Save Profile
+              <Button onClick={handleContactPlayer} className="gap-1.5">
+                <MessageSquare className="h-4 w-4" />
+                Contact
+              </Button>
+              
+              <Button 
+                variant={isSaved ? "secondary" : "outline"} 
+                onClick={handleSaveProfile}
+                className="gap-1.5"
+              >
+                <Bookmark className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
+                {isSaved ? 'Saved' : 'Save'}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleShareProfile}
+                className="gap-1.5"
+              >
+                <Share2 className="h-4 w-4" />
+                Share
+              </Button>
             </>
           )}
-        </Button>
-      </div>
-      
-      <div className="w-full flex justify-between text-sm text-gray-500">
-        <div className="flex items-center">
-          <MapPin className="h-3 w-3 mr-1" />
-          {player.location}
-        </div>
-        <div>
-          Active {player.lastActive}
         </div>
       </div>
     </div>
