@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -298,7 +297,7 @@ const PlayerProfilePage = () => {
                 </TabsContent>
                 
                 <TabsContent value="media" className="space-y-8">
-                  <PlayerHighlights highlights={playerData.highlights} />
+                  <PlayerHighlights highlights={playerProfile.highlights || []} />
                 </TabsContent>
                 
                 <TabsContent value="team-fit" className="space-y-8">

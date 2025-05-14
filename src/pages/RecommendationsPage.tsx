@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -226,31 +225,8 @@ const RecommendationsPage = () => {
 // Mock recommendations for development and fallback purposes
 const mockRecommendations: Recommendation[] = [
   {
-    id: '1',
-    title: 'Advanced Finishing Techniques',
-    type: 'course',
-    category: 'Training',
-    description: 'Master the art of clinical finishing with this comprehensive course',
-    imageUrl: 'https://images.unsplash.com/photo-1593341646782-e0b495cff86d',
-    tags: ['Technical', 'Attacking', 'Shooting'],
-    reason: 'Based on your position and skill development goals',
-    score: 92
-  },
-  {
-    id: '2',
-    title: 'Youth Tournament - Barcelona',
-    type: 'event',
-    category: 'Competition',
-    description: 'International youth tournament with scouts from top European clubs',
-    imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55',
-    location: 'Barcelona, Spain',
-    date: 'June 15-20, 2025',
-    reason: 'Matches your age group and performance level',
-    score: 88
-  },
-  {
-    id: '3',
-    title: 'FC Ajax Youth Academy',
+    id: 'club-1',
+    title: 'FC Barcelona Youth Academy',
     type: 'club',
     category: 'Academy',
     description: 'Renowned for developing technical players with strong fundamentals',
@@ -260,26 +236,60 @@ const mockRecommendations: Recommendation[] = [
     score: 86
   },
   {
-    id: '4',
-    title: 'Mental Strength Coach - Sarah Williams',
+    id: 'player-1',
+    title: 'John Smith',
     type: 'player',
-    category: 'Coaching',
-    description: 'Sports psychologist specializing in young athlete mental preparation',
-    location: 'Online Sessions Available',
-    reason: 'Could help improve your mental game based on recent performances',
-    score: 84
+    category: 'Forward',
+    description: 'Fast and dynamic forward with keen eye for goal.',
+    imageUrl: 'https://randomuser.me/api/portraits/men/10.jpg',
+    location: 'USA',
+    reason: 'Based on your player preferences and scouting history',
+    score: 92
   },
   {
-    id: '5',
-    title: 'Trial Opportunity - Brighton & Hove U23',
-    type: 'opportunity',
-    category: 'Trial',
-    description: 'Week-long trial with Premier League club\'s U23 team',
-    location: 'Brighton, UK',
-    date: 'July 10-17, 2025',
-    reason: 'Matches your skill level and career aspirations',
-    score: 83
-  }
+    id: 'coach-1',
+    title: 'Marco Rossi',
+    type: 'coach',
+    category: 'Head Coach',
+    description: "Specializes in developing young attacking talent",
+    imageUrl: 'https://randomuser.me/api/portraits/men/15.jpg',
+    location: 'Milan, Italy',
+    reason: 'Matches your coaching style preferences and development needs',
+    score: 93
+  },
+  {
+    id: 'agent-1',
+    title: 'Elite Sports Agency',
+    type: 'agent',
+    category: 'Transfers',
+    description: 'Specializing in career development for young talents',
+    imageUrl: 'https://randomuser.me/api/portraits/men/12.jpg',
+    location: 'Paris, France',
+    reason: 'Could help advance your career based on your goals',
+    score: 88
+  },
+  {
+    id: 'sponsor-1',
+    title: 'Global Sports Foundation',
+    type: 'sponsor',
+    category: 'Grants',
+    description: 'Supporting the next generation of sports stars',
+    imageUrl: 'https://randomuser.me/api/portraits/men/14.jpg',
+    location: 'New York, USA',
+    reason: 'Potential partnership opportunity based on your profile',
+    score: 85
+  },
+  {
+    id: 'equip-1',
+    title: 'SportEquip Pro',
+    type: 'equipment_supplier',
+    category: 'Custom Shoes',
+    description: 'Custom equipment for professional athletes',
+    imageUrl: 'https://randomuser.me/api/portraits/men/13.jpg',
+    location: 'Berlin, Germany',
+    reason: 'Equipment that could enhance your performance',
+    score: 84
+  },
 ];
 
 export default RecommendationsPage;

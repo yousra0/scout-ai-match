@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { 
+import {
   mockPlayers,
   mockCoaches,
   mockClubs,

@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  mockPlayers, 
+import {
+  mockPlayers,
   mockCoaches,
   mockClubs,
   mockAgents,
@@ -36,84 +35,88 @@ export const fetchRecommendationsByType = async (
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select(`
-        *, 
-        ${type === 'player' ? 'player_details(*)' : ''}
-        ${type === 'coach' ? 'coach_details(*)' : ''}
-        ${type === 'club' ? 'club_details(*)' : ''}
-        ${type === 'agent' ? 'agent_details(*)' : ''}
-        ${type === 'sponsor' ? 'sponsor_details(*)' : ''}
-        ${type === 'equipment_supplier' ? 'equipment_supplier_details(*)' : ''}
+        *,
+        player_details(*),
+        coach_details(*),
+        club_details(*),
+        agent_details(*),
+        sponsor_details(*),
+        equipment_supplier_details(*)
       `)
       .eq('user_type', type)
       .neq('id', userId)
       .limit(limit);
-    
+
     if (profileError || !profileData || profileData.length === 0) {
       console.log(`Error or no data fetching ${type} recommendations from DB:`, profileError);
       return getMockRecommendationsByType(type, limit);
     }
-    
+
     // Map database profiles to recommendations
     return profileData.map(profile => {
       // Get details table based on type
-      const detailsTable = `${type}_details`;
-      const details = profile[detailsTable] || {};
-      
-      // Generate a match score (80-95 range)
+      let details: any = {};
+      switch (type) {
+        case "player": details = profile.player_details ?? {}; break;
+        case "club": details = profile.club_details ?? {}; break;
+        case "coach": details = profile.coach_details ?? {}; break;
+        case "agent": details = profile.agent_details ?? {}; break;
+        case "sponsor": details = profile.sponsor_details ?? {}; break;
+        case "equipment_supplier": details = profile.equipment_supplier_details ?? {}; break;
+      }
+
       const score = Math.floor(Math.random() * 16) + 80;
-      
-      // Map fields based on stakeholder type
       let category = '';
       let tags: string[] = [];
       let reason = '';
-      
+
       switch (type) {
         case 'player':
-          category = details.position || 'Player';
+          category = details.position ?? 'Player';
           tags = [details.position, details.country].filter(Boolean);
-          reason = `Based on your player preferences and scouting history`;
+          reason = "Based on your player preferences and scouting history";
           break;
         case 'coach':
-          category = details.specialization || 'Coach';
+          category = details.specialization ?? 'Coach';
           tags = [details.specialization, details.current_club].filter(Boolean);
-          reason = `Matches your coaching style preferences and development needs`;
+          reason = "Matches your coaching style preferences and development needs";
           break;
         case 'club':
-          category = details.league || 'Club';
+          category = details.league ?? 'Club';
           tags = [details.league, details.country].filter(Boolean);
-          reason = `Aligns with your career aspirations and playing style`;
+          reason = "Aligns with your career aspirations and playing style";
           break;
         case 'agent':
-          category = details.specialization || 'Agent';
+          category = details.specialization ?? 'Agent';
           tags = [details.specialization, details.regions_of_operation].filter(Boolean);
-          reason = `Could help advance your career based on your goals`;
+          reason = "Could help advance your career based on your goals";
           break;
         case 'sponsor':
-          category = details.industry || 'Sponsor';
+          category = details.industry ?? 'Sponsor';
           tags = [details.industry, details.sponsorship_focus].filter(Boolean);
-          reason = `Potential partnership opportunity based on your profile`;
+          reason = "Potential partnership opportunity based on your profile";
           break;
         case 'equipment_supplier':
-          category = details.specialization || 'Equipment';
+          category = details.specialization ?? 'Equipment';
           tags = [details.products, details.specialization].filter(Boolean);
-          reason = `Equipment that could enhance your performance`;
+          reason = "Equipment that could enhance your performance";
           break;
       }
-      
+
       return {
         id: profile.id,
-        title: profile.full_name || `${type.charAt(0).toUpperCase() + type.slice(1)} recommendation`,
+        title: profile.full_name ?? type.charAt(0).toUpperCase() + type.slice(1) + " recommendation",
         type: type,
-        category: category,
-        description: details.description || `Recommended ${type} based on your profile`,
+        category: category ?? "",
+        description: details.description ?? `Recommended ${type} based on your profile`,
         imageUrl: profile.avatar_url,
-        location: details.country || details.city || details.location,
+        location: details.country ?? details.city ?? details.location,
         tags: tags.filter(Boolean),
         reason: reason,
         score: score
       };
     });
-    
+
   } catch (error) {
     console.error(`Error fetching ${type} recommendations:`, error);
     // Return mock data as fallback
