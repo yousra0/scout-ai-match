@@ -111,9 +111,8 @@ export const fetchStakeholder = async (
       .single();
     
     if (error || !data) {
-      console.log(`Error fetching ${type} data from database, falling back to mock data`, error);
-      // Return mock data
-      return getMockStakeholder(type, id);
+      console.log(`Error fetching ${type} data from database`, error);
+      return null;
     }
     
     // Map database data to stakeholder interface
@@ -121,8 +120,7 @@ export const fetchStakeholder = async (
     
   } catch (error) {
     console.error(`Error fetching stakeholder ${type}/${id}:`, error);
-    // Return mock data as fallback
-    return getMockStakeholder(type, id);
+    return null;
   }
 };
 
@@ -208,22 +206,7 @@ const mapDatabaseToStakeholder = (data: any, type: StakeholderType): Stakeholder
 
 // Get mock stakeholder data
 export const getMockStakeholder = (type: StakeholderType, id: string): Stakeholder | null => {
-  switch (type) {
-    case 'player':
-      return mockPlayers.find(player => player.id === id) as PlayerStakeholder || mockPlayers[0] as PlayerStakeholder || null;
-    case 'coach':
-      return mockCoaches.find(coach => coach.id === id) || mockCoaches[0] || null;
-    case 'club':
-      return mockClubs.find(club => club.id === id) || mockClubs[0] || null;
-    case 'agent':
-      return mockAgents.find(agent => agent.id === id) || mockAgents[0] || null;
-    case 'sponsor':
-      return mockSponsors.find(sponsor => sponsor.id === id) || mockSponsors[0] || null;
-    case 'equipment_supplier':
-      return mockEquipmentSuppliers.find(supplier => supplier.id === id) || mockEquipmentSuppliers[0] || null;
-    default:
-      return null;
-  }
+  return null;
 };
 
 // Fetch all stakeholders of a specific type
@@ -243,9 +226,8 @@ export const fetchStakeholdersByType = async (
       .limit(limit);
     
     if (error || !data || data.length === 0) {
-      console.log(`Error fetching ${type} data from database, falling back to mock data`, error);
-      // Return mock data
-      return getMockStakeholdersByType(type);
+      console.log(`Error fetching ${type} data from database`, error);
+      return [];
     }
     
     // Map database data to stakeholder interface
@@ -253,27 +235,11 @@ export const fetchStakeholdersByType = async (
     
   } catch (error) {
     console.error(`Error fetching ${type} stakeholders:`, error);
-    // Return mock data as fallback
-    return getMockStakeholdersByType(type);
+    return [];
   }
 };
 
 // Get mock stakeholders by type
 export const getMockStakeholdersByType = (type: StakeholderType): Stakeholder[] => {
-  switch (type) {
-    case 'player':
-      return mockPlayers as PlayerStakeholder[];
-    case 'coach':
-      return mockCoaches as CoachStakeholder[];
-    case 'club':
-      return mockClubs as ClubStakeholder[];
-    case 'agent':
-      return mockAgents as AgentStakeholder[];
-    case 'sponsor':
-      return mockSponsors as ServiceProviderStakeholder[];
-    case 'equipment_supplier':
-      return mockEquipmentSuppliers as ServiceProviderStakeholder[];
-    default:
-      return [];
-  }
+  return [];
 };

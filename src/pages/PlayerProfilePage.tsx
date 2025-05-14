@@ -192,8 +192,8 @@ const PlayerProfilePage = () => {
           <p className="mt-2 text-muted-foreground">
             The player profile you are looking for does not exist or has been removed.
           </p>
-          <Button onClick={() => navigate(-1)} className="mt-4">
-            Go Back
+          <Button onClick={() => navigate('/')} className="mt-4">
+            Go Home
           </Button>
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -45,7 +44,6 @@ const ResetPasswordPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (newPassword !== confirmPassword) {
       toast({
         title: "Passwords don't match",
@@ -54,7 +52,6 @@ const ResetPasswordPage = () => {
       });
       return;
     }
-    
     if (newPassword.length < 6) {
       toast({
         title: "Password too short",
@@ -63,30 +60,23 @@ const ResetPasswordPage = () => {
       });
       return;
     }
-    
     setIsLoading(true);
-    
     try {
+      // Use Supabase's reset flow
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
-      
       if (error) {
         throw error;
       }
-      
       toast({
         title: "Password updated",
         description: "Your password has been successfully reset.",
       });
-      
-      // Navigate to login page after short delay
       setTimeout(() => {
         navigate('/login');
       }, 1500);
-      
     } catch (error: any) {
-      console.error('Password reset error:', error);
       toast({
         title: "Password reset failed",
         description: error.message || "There was a problem resetting your password.",

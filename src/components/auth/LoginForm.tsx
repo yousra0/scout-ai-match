@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +30,15 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const { signIn, resetPassword } = useAuth();
 
+  // Add useEffect for populating email from localStorage if rememberMe
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('rememberedEmail');
+    if (storedEmail) {
+      setEmail(storedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -56,6 +64,13 @@ const LoginForm = () => {
         title: "Login successful",
         description: "You have been logged in successfully.",
       });
+      
+      // "Remember Me" logic - store or remove email
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
       
       // Clear login form
       setEmail('');
