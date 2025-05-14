@@ -25,13 +25,14 @@ const RecommendationsPage = () => {
       let fetchedRecommendations: Recommendation[];
       
       if (user) {
-        // Use our new recommendation service if user is logged in
-        fetchedRecommendations = await getRecommendations(user.id, 10);
+        // Use recommendation service for all types
+        // Default to showing 'player' recommendations if 'all', else use tab
+        const type = (activeTab === 'all' ? 'player' : activeTab) as any;
+        fetchedRecommendations = await getRecommendations(user.id, type, 10);
       } else {
         // Fall back to mock recommendations for demo purposes
         fetchedRecommendations = mockRecommendations;
       }
-      
       setRecommendations(fetchedRecommendations);
     } catch (error) {
       console.error('Error fetching recommendations:', error);
@@ -40,22 +41,22 @@ const RecommendationsPage = () => {
         description: "Failed to load recommendation data. Please try again later.",
         variant: "destructive",
       });
-      
       // Fall back to mock data on error
       setRecommendations(mockRecommendations);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchRecommendations();
-  }, [user, toast]);
-  
+    // eslint-disable-next-line
+  }, [user, toast, activeTab]);
+
   const filteredRecommendations = activeTab === 'all' 
     ? recommendations 
     : recommendations.filter(rec => rec.type === activeTab);
-  
+
   // Get icon based on type
   const getIcon = (type: string) => {
     switch (type) {
@@ -68,10 +69,6 @@ const RecommendationsPage = () => {
     }
   };
 
-  const getCategoryIcon = (type: string) => {
-    return <Tag className="h-4 w-4 text-gray-500" />;
-  };
-
   return (
     <Layout>
       <div className="container mx-auto py-8 px-4">
@@ -82,7 +79,6 @@ const RecommendationsPage = () => {
               Tailored recommendations based on your profile, activity, and goals
             </p>
           </div>
-          
           <Button 
             variant="outline" 
             size="sm"
@@ -93,7 +89,6 @@ const RecommendationsPage = () => {
             Refresh
           </Button>
         </div>
-        
         <Tabs defaultValue="all" className="mb-8" onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="all">All</TabsTrigger>
@@ -104,11 +99,9 @@ const RecommendationsPage = () => {
             <TabsTrigger value="player">Players</TabsTrigger>
             <TabsTrigger value="coach">Coaches</TabsTrigger>
           </TabsList>
-          
           <TabsContent value={activeTab}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoading ? (
-                // Loading skeletons
                 Array(6).fill(0).map((_, index) => (
                   <Card key={index} className="overflow-hidden">
                     <div className="aspect-video w-full bg-muted">
@@ -131,36 +124,29 @@ const RecommendationsPage = () => {
               ) : filteredRecommendations.length > 0 ? (
                 filteredRecommendations.map(rec => (
                   <Card key={rec.id} className="overflow-hidden">
-                    {rec.imageUrl && (
-                      <div className="aspect-video w-full bg-muted relative overflow-hidden">
+                    <div className="aspect-video w-full bg-muted relative overflow-hidden flex items-center justify-center">
+                      {rec.avatar ? (
                         <img 
-                          src={rec.imageUrl} 
-                          alt={rec.title} 
-                          className="w-full h-full object-cover"
+                          src={rec.avatar}
+                          alt={rec.name}
+                          className="w-16 h-16 object-cover rounded-full border-2 border-primary"
                         />
-                        <div className="absolute top-2 right-2 flex gap-2">
-                          <Badge className="bg-background/80 text-foreground">
-                            {rec.type.charAt(0).toUpperCase() + rec.type.slice(1)}
-                          </Badge>
-                          <Badge className="bg-primary">
-                            {rec.score}% Match
-                          </Badge>
-                        </div>
-                      </div>
-                    )}
+                      ) : (
+                        <Avatar>
+                          <AvatarFallback>{rec.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
                     <CardHeader className="pb-2">
                       <div className="flex items-center gap-2 mb-1">
                         {getIcon(rec.type)}
-                        <CardTitle className="text-lg">{rec.title}</CardTitle>
+                        <CardTitle className="text-lg">{rec.name}</CardTitle>
                       </div>
-                      <CardDescription className="flex items-center gap-1">
-                        {getCategoryIcon(rec.category)}
-                        <span>{rec.category}</span>
-                      </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
-                      
+                      {rec.description && (
+                        <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
+                      )}
                       <div className="flex flex-col space-y-1 text-sm">
                         {rec.location && (
                           <div className="flex items-center gap-1 text-muted-foreground">
@@ -168,15 +154,7 @@ const RecommendationsPage = () => {
                             <span>{rec.location}</span>
                           </div>
                         )}
-                        
-                        {rec.date && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="h-3.5 w-3.5" />
-                            <span>{rec.date}</span>
-                          </div>
-                        )}
                       </div>
-                      
                       {rec.tags && rec.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-3">
                           {rec.tags.map(tag => (
@@ -186,13 +164,11 @@ const RecommendationsPage = () => {
                           ))}
                         </div>
                       )}
-                      
                       <Separator className="my-3" />
-                      
                       <div className="text-xs text-muted-foreground flex items-start gap-1">
                         <Zap className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
                         <span>
-                          <strong className="font-medium text-primary">Why we recommend this:</strong> {rec.reason}
+                          <strong className="font-medium text-primary">Top match!</strong>
                         </span>
                       </div>
                     </CardContent>
@@ -203,7 +179,7 @@ const RecommendationsPage = () => {
                         asChild
                       >
                         <a href={`/${rec.type}s/${rec.id}`}>
-                          Explore This Recommendation
+                          Explore This {rec.type.charAt(0).toUpperCase() + rec.type.slice(1)}
                         </a>
                       </Button>
                     </CardFooter>
@@ -226,70 +202,64 @@ const RecommendationsPage = () => {
 const mockRecommendations: Recommendation[] = [
   {
     id: 'club-1',
-    title: 'FC Barcelona Youth Academy',
+    name: 'FC Barcelona',
     type: 'club',
-    category: 'Academy',
-    description: 'Renowned for developing technical players with strong fundamentals',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/79/Ajax_Amsterdam.svg/1200px-Ajax_Amsterdam.svg.png',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/79/Ajax_Amsterdam.svg/1200px-Ajax_Amsterdam.svg.png',
+    matchPercentage: 86,
     location: 'Amsterdam, Netherlands',
-    reason: 'Aligns with your playing style and development needs',
-    score: 86
+    description: 'Renowned for developing technical players with strong fundamentals',
+    tags: ['Academy', 'Spain']
   },
   {
     id: 'player-1',
-    title: 'John Smith',
+    name: 'John Smith',
     type: 'player',
-    category: 'Forward',
-    description: 'Fast and dynamic forward with keen eye for goal.',
-    imageUrl: 'https://randomuser.me/api/portraits/men/10.jpg',
+    avatar: 'https://randomuser.me/api/portraits/men/10.jpg',
+    matchPercentage: 92,
     location: 'USA',
-    reason: 'Based on your player preferences and scouting history',
-    score: 92
+    description: 'Fast and dynamic forward with keen eye for goal.',
+    tags: ['Forward']
   },
   {
     id: 'coach-1',
-    title: 'Marco Rossi',
+    name: 'Marco Rossi',
     type: 'coach',
-    category: 'Head Coach',
-    description: "Specializes in developing young attacking talent",
-    imageUrl: 'https://randomuser.me/api/portraits/men/15.jpg',
+    avatar: 'https://randomuser.me/api/portraits/men/15.jpg',
+    matchPercentage: 93,
     location: 'Milan, Italy',
-    reason: 'Matches your coaching style preferences and development needs',
-    score: 93
+    description: "Specializes in developing young attacking talent",
+    tags: ['Head Coach']
   },
   {
     id: 'agent-1',
-    title: 'Elite Sports Agency',
+    name: 'Elite Sports Agency',
     type: 'agent',
-    category: 'Transfers',
-    description: 'Specializing in career development for young talents',
-    imageUrl: 'https://randomuser.me/api/portraits/men/12.jpg',
+    avatar: 'https://randomuser.me/api/portraits/men/12.jpg',
+    matchPercentage: 88,
     location: 'Paris, France',
-    reason: 'Could help advance your career based on your goals',
-    score: 88
+    description: 'Specializing in career development for young talents',
+    tags: ['Transfers']
   },
   {
     id: 'sponsor-1',
-    title: 'Global Sports Foundation',
+    name: 'Global Sports Foundation',
     type: 'sponsor',
-    category: 'Grants',
-    description: 'Supporting the next generation of sports stars',
-    imageUrl: 'https://randomuser.me/api/portraits/men/14.jpg',
+    avatar: 'https://randomuser.me/api/portraits/men/14.jpg',
+    matchPercentage: 85,
     location: 'New York, USA',
-    reason: 'Potential partnership opportunity based on your profile',
-    score: 85
+    description: 'Supporting the next generation of sports stars',
+    tags: ['Grants']
   },
   {
     id: 'equip-1',
-    title: 'SportEquip Pro',
+    name: 'SportEquip Pro',
     type: 'equipment_supplier',
-    category: 'Custom Shoes',
-    description: 'Custom equipment for professional athletes',
-    imageUrl: 'https://randomuser.me/api/portraits/men/13.jpg',
+    avatar: 'https://randomuser.me/api/portraits/men/13.jpg',
+    matchPercentage: 84,
     location: 'Berlin, Germany',
-    reason: 'Equipment that could enhance your performance',
-    score: 84
-  },
+    description: 'Custom equipment for professional athletes',
+    tags: ['Custom Shoes']
+  }
 ];
 
 export default RecommendationsPage;
