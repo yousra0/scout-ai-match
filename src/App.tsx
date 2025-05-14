@@ -24,22 +24,22 @@ const queryClient = new QueryClient();
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
-  
+
   if (!user) {
     return <Navigate to="/login" />;
   }
-  
+
   return <>{children}</>;
 };
 
 const AppRoutes = () => {
-  const { user, profile, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
 
-  // Loading spinner for auth restoring
+  // Guard: do nothing until loading is done!
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -47,69 +47,54 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-
-      {/* 
-        Only redirect if user exists AND we are finished loading.
-        This ensures login/register are not "flashed away" while session is still restoring.
-      */}
-      <Route 
-        path="/login"
-        element={!user ? <LoginPage /> : <Navigate to="/" />}
-      />
-      <Route 
-        path="/register"
-        element={!user ? <RegisterPage /> : <Navigate to="/" />}
-      />
+      <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" replace />} />
+      <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/" replace />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      {/* Main Navigation Pages */}
       <Route path="/explore" element={<ScoutingPage />} />
       <Route path="/matching" element={<MatchingPage />} />
       <Route path="/recommendations" element={<RecommendationsPage />} />
       <Route path="/opportunities" element={<OpportunitiesPage />} />
 
-      {/* Automatically redirect to own profile if user is logged in */}
-      <Route 
-        path="/profile" 
+      <Route
+        path="/profile"
         element={
           user ? (
             <Navigate to={`/players/${user.id}`} replace />
           ) : (
             <Navigate to="/login" replace />
           )
-        } 
+        }
       />
-      
-      {/* Messaging - Protected */}
-      <Route 
-        path="/messaging" 
+
+      <Route
+        path="/messaging"
         element={
           <ProtectedRoute>
             <MessagingPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      
-      {/* Protected Routes */}
-      <Route 
-        path="/dashboard" 
+
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <DashboardPage />
           </ProtectedRoute>
-        } 
+        }
       />
 
-      {/* Player Profile - No longer protected, can be viewed by anyone */}
+      {/* Player Profile - open route */}
       <Route path="/players/:id" element={<PlayerProfilePage />} />
 
-      <Route 
-        path="/discover" 
+      <Route
+        path="/discover"
         element={
           <ProtectedRoute>
             <ScoutingPage />
           </ProtectedRoute>
-        } 
+        }
       />
 
       {/* Stakeholder routes */}
@@ -142,3 +127,4 @@ const App = () => (
 );
 
 export default App;
+
