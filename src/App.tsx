@@ -38,24 +38,36 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => {
   const { user, profile, isLoading } = useAuth();
-  
+
+  // Loading spinner for auth restoring
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
-  
+
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
-      <Route path="/register" element={user ? <Navigate to="/" /> : <RegisterPage />} />
+
+      {/* 
+        Only redirect if user exists AND we are finished loading.
+        This ensures login/register are not "flashed away" while session is still restoring.
+      */}
+      <Route 
+        path="/login"
+        element={!user ? <LoginPage /> : <Navigate to="/" />}
+      />
+      <Route 
+        path="/register"
+        element={!user ? <RegisterPage /> : <Navigate to="/" />}
+      />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      
+
       {/* Main Navigation Pages */}
       <Route path="/explore" element={<ScoutingPage />} />
       <Route path="/matching" element={<MatchingPage />} />
       <Route path="/recommendations" element={<RecommendationsPage />} />
       <Route path="/opportunities" element={<OpportunitiesPage />} />
-      
+
       {/* Automatically redirect to own profile if user is logged in */}
       <Route 
         path="/profile" 
@@ -87,10 +99,10 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      
+
       {/* Player Profile - No longer protected, can be viewed by anyone */}
       <Route path="/players/:id" element={<PlayerProfilePage />} />
-      
+
       <Route 
         path="/discover" 
         element={
@@ -99,7 +111,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      
+
       {/* Stakeholder routes */}
       <Route path="/clubs/:id" element={<StakeholderProfilePage />} />
       <Route path="/managers/:id" element={<StakeholderProfilePage />} />
@@ -109,7 +121,7 @@ const AppRoutes = () => {
       <Route path="/sponsors/:id" element={<StakeholderProfilePage />} />
       <Route path="/equipment-suppliers/:id" element={<StakeholderProfilePage />} />
       <Route path="/:type/:id" element={<StakeholderProfilePage />} />
-      
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
