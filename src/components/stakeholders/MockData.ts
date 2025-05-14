@@ -10,6 +10,7 @@ export interface PlayerMock {
   age: number;
   club: string;
   country: string;
+  location: string; // <-- Add location for compatibility
   description: string;
   attributes: {
     pace: number;
@@ -90,6 +91,7 @@ export const mockPlayers: PlayerMock[] = [
     age: 22,
     club: "FC Stars",
     country: "USA",
+    location: "New York, USA",
     description: "Fast and dynamic forward with keen eye for goal.",
     attributes: {
       pace: 90,
@@ -119,6 +121,7 @@ export const mockPlayers: PlayerMock[] = [
     age: 24,
     club: "Blue Warriors",
     country: "England",
+    location: "London, England",
     description: "Strong on tackles and aerial duels.",
     attributes: {
       pace: 76,

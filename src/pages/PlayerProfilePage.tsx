@@ -276,7 +276,14 @@ const PlayerProfilePage = () => {
                 
                 <TabsContent value="attributes" className="space-y-8">
                   <PlayerAttributes 
-                    attributes={playerData.attributes}
+                    attributes={
+                      Array.isArray(playerData.attributes)
+                        ? playerData.attributes.reduce((acc: any, attr: any) => {
+                            acc[attr.name.toLowerCase()] = attr.value;
+                            return acc;
+                          }, {})
+                        : playerData.attributes
+                    }
                     radarData={[
                       { subject: 'Pace', A: 80, fullMark: 100 },
                       { subject: 'Shooting', A: 75, fullMark: 100 },

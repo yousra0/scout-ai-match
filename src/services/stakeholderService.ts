@@ -24,6 +24,29 @@ export interface BaseStakeholder {
   website?: string;
 }
 
+// Added for players to be part of Stakeholder union
+export interface PlayerStakeholder extends BaseStakeholder {
+  type: 'player';
+  position: string;
+  age: number;
+  club: string;
+  country: string;
+  attributes: {
+    pace: number;
+    shooting: number;
+    passing: number;
+    dribbling: number;
+    defending: number;
+    physical: number;
+  };
+  experience?: any[];
+  highlights?: {
+    url: string;
+    duration: number;
+    views: number;
+  }[];
+}
+
 export interface ClubStakeholder extends BaseStakeholder {
   type: 'club';
   founded?: string;
@@ -62,7 +85,13 @@ export interface ServiceProviderStakeholder extends BaseStakeholder {
   clients?: string[];
 }
 
-export type Stakeholder = ClubStakeholder | CoachStakeholder | AgentStakeholder | ServiceProviderStakeholder;
+// Updated: Add PlayerStakeholder to union
+export type Stakeholder =
+  | PlayerStakeholder
+  | ClubStakeholder
+  | CoachStakeholder
+  | AgentStakeholder
+  | ServiceProviderStakeholder;
 
 // Fetch a stakeholder by type and id
 export const fetchStakeholder = async (
@@ -112,6 +141,26 @@ const mapDatabaseToStakeholder = (data: any, type: StakeholderType): Stakeholder
   };
 
   switch (type) {
+    case 'player':
+      return {
+        ...baseStakeholder,
+        type: 'player',
+        position: data.player_details?.position || '',
+        age: data.player_details?.age || 0,
+        club: data.player_details?.club || '',
+        country: data.player_details?.country || '',
+        attributes: {
+          pace: 0,
+          shooting: 0,
+          passing: 0,
+          dribbling: 0,
+          defending: 0,
+          physical: 0,
+        },
+        experience: [],
+        highlights: [],
+      } as PlayerStakeholder;
+
     case 'club':
       return {
         ...baseStakeholder,
@@ -148,7 +197,7 @@ const mapDatabaseToStakeholder = (data: any, type: StakeholderType): Stakeholder
         ...baseStakeholder,
         type: type as 'sponsor' | 'equipment_supplier',
         founded: data[`${type}_details`]?.year_established?.toString(),
-        services: data[`${type}_details`]?.sponsorship_focus?.split(',').map((s: string) => s.trim()) || 
+        services: data[`${type}_details`]?.sponsorship_focus?.split(',').map((s: string) => s.trim()) ||
                  data[`${type}_details`]?.products?.split(',').map((p: string) => p.trim()) || []
       } as ServiceProviderStakeholder;
       
@@ -161,7 +210,7 @@ const mapDatabaseToStakeholder = (data: any, type: StakeholderType): Stakeholder
 export const getMockStakeholder = (type: StakeholderType, id: string): Stakeholder | null => {
   switch (type) {
     case 'player':
-      return mockPlayers.find(player => player.id === id) || mockPlayers[0] || null;
+      return mockPlayers.find(player => player.id === id) as PlayerStakeholder || mockPlayers[0] as PlayerStakeholder || null;
     case 'coach':
       return mockCoaches.find(coach => coach.id === id) || mockCoaches[0] || null;
     case 'club':
@@ -213,17 +262,17 @@ export const fetchStakeholdersByType = async (
 export const getMockStakeholdersByType = (type: StakeholderType): Stakeholder[] => {
   switch (type) {
     case 'player':
-      return mockPlayers;
+      return mockPlayers as PlayerStakeholder[];
     case 'coach':
-      return mockCoaches;
+      return mockCoaches as CoachStakeholder[];
     case 'club':
-      return mockClubs;
+      return mockClubs as ClubStakeholder[];
     case 'agent':
-      return mockAgents;
+      return mockAgents as AgentStakeholder[];
     case 'sponsor':
-      return mockSponsors;
+      return mockSponsors as ServiceProviderStakeholder[];
     case 'equipment_supplier':
-      return mockEquipmentSuppliers;
+      return mockEquipmentSuppliers as ServiceProviderStakeholder[];
     default:
       return [];
   }

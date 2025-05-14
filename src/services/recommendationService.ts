@@ -227,6 +227,7 @@ const getMockRecommendationsByType = (type: StakeholderType, limit: number): Rec
       category: category,
       description: item.description || `Recommended ${type} based on your profile`,
       imageUrl: item.avatar,
+      // Now always safe: player/location exists
       location: item.location,
       tags: tags,
       reason: reason,
