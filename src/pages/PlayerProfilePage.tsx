@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ const PlayerProfilePage = () => {
       try {
         setIsLoading(true);
         
+        // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -46,6 +48,7 @@ const PlayerProfilePage = () => {
           
         if (profileError) {
           if (profileError.code === 'PGRST116') {
+            // Record not found
             setNotFound(true);
             toast({
               title: "Player not found",
@@ -67,6 +70,7 @@ const PlayerProfilePage = () => {
           return;
         }
         
+        // Fetch player details
         const { data: playerData, error: playerError } = await supabase
           .from('player_details')
           .select('*')
@@ -77,6 +81,7 @@ const PlayerProfilePage = () => {
           throw playerError;
         }
         
+        // Fetch player media
         const { data: mediaData, error: mediaError } = await supabase
           .from('player_media')
           .select('*')
@@ -86,6 +91,7 @@ const PlayerProfilePage = () => {
           throw mediaError;
         }
         
+        // Fetch player experiences
         const { data: experienceData, error: experienceError } = await supabase
           .from('player_experience')
           .select('*')
@@ -96,6 +102,7 @@ const PlayerProfilePage = () => {
           throw experienceError;
         }
         
+        // Combine data
         const fullPlayerData = {
           ...profileData,
           ...(playerData || {}),
@@ -122,6 +129,7 @@ const PlayerProfilePage = () => {
     fetchPlayerData();
   }, [id, navigate, toast]);
 
+  // If loading, show loading state
   if (isLoading) {
     return (
       <Layout>
@@ -133,6 +141,7 @@ const PlayerProfilePage = () => {
     );
   }
 
+  // If not found, show not found message
   if (notFound) {
     return (
       <Layout>
@@ -147,6 +156,7 @@ const PlayerProfilePage = () => {
     );
   }
 
+  // Prepare data for PlayerHeader
   const headerData = playerProfile 
     ? {
         name: playerProfile.full_name || 'Unknown Player',
@@ -156,11 +166,12 @@ const PlayerProfilePage = () => {
         avatarUrl: playerProfile.avatar_url || 'https://ui-avatars.com/api/?name=Unknown+Player',
         location: playerProfile.club || 'Not specified',
         lastActive: 'Recently',
-        matchPercentage: 85,
+        matchPercentage: 85, // Default match percentage
         id: id
       }
     : { ...playerData, id };
 
+  // Process media for highlights and photos
   const photos = playerMedia
     .filter(item => item.media_type === 'photo')
     .map(item => ({
@@ -177,8 +188,8 @@ const PlayerProfilePage = () => {
       title: item.title,
       url: item.media_url,
       thumbnail: item.media_url,
-      duration: '00:30',
-      views: '0'
+      duration: '00:30', // Placeholder
+      views: '0' // Placeholder
     }));
 
   return (
@@ -198,6 +209,7 @@ const PlayerProfilePage = () => {
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                  {/* Left column - Avatar and basic info */}
                   <div className="col-span-1 md:col-span-3">
                     <PlayerHeader player={headerData} />
                     
@@ -215,6 +227,7 @@ const PlayerProfilePage = () => {
                     )}
                   </div>
                   
+                  {/* Right column - Tabs with detailed info */}
                   <div className="col-span-1 md:col-span-9">
                     <Tabs defaultValue="overview">
                       <TabsList className="mb-6 grid grid-cols-5 md:w-auto">
@@ -225,6 +238,7 @@ const PlayerProfilePage = () => {
                         <TabsTrigger value="fit">Team Fit</TabsTrigger>
                       </TabsList>
                       
+                      {/* Overview Tab */}
                       <TabsContent value="overview">
                         <PlayerOverview 
                           bio={playerProfile?.description || playerData.bio} 
@@ -237,6 +251,7 @@ const PlayerProfilePage = () => {
                         />
                       </TabsContent>
                       
+                      {/* Stats Tab */}
                       <TabsContent value="stats">
                         <PlayerStats 
                           stats={playerData.stats} 
@@ -245,6 +260,7 @@ const PlayerProfilePage = () => {
                         />
                       </TabsContent>
                       
+                      {/* Highlights Tab */}
                       <TabsContent value="highlights">
                         <PlayerHighlights 
                           mediaItems={videos.length > 0 ? videos : playerData.highlights} 
@@ -254,14 +270,17 @@ const PlayerProfilePage = () => {
                         />
                       </TabsContent>
                       
+                      {/* Experience Tab */}
                       <TabsContent value="experience">
                         <PlayerExperience 
                           experiences={playerExperiences.length > 0 ? playerExperiences : playerData.experience}
+                          education={playerData.education}
                           isCurrentUserProfile={isCurrentUserProfile}
                           playerId={id || ''}
                         />
                       </TabsContent>
                       
+                      {/* Team Fit Tab */}
                       <TabsContent value="fit">
                         <PlayerTeamFit matchPercentage={playerData.matchPercentage} />
                       </TabsContent>
