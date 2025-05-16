@@ -38,7 +38,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => {
   const { user, isLoading, profile } = useAuth();
 
-  // Guard: do nothing until loading is done!
+  // Wait for auth state before rendering anything
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -53,6 +53,7 @@ const AppRoutes = () => {
     return "/";
   };
 
+  // Only after loading is complete do we decide where to send the user
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
