@@ -1,298 +1,321 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit, Loader2 } from 'lucide-react';
-import Layout from '@/components/layout/Layout';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+
 import PlayerHeader from '@/components/player/PlayerHeader';
 import PlayerOverview from '@/components/player/PlayerOverview';
 import PlayerStats from '@/components/player/PlayerStats';
-import PlayerHighlights from '@/components/player/PlayerHighlights';
+import PlayerAttributes from '@/components/player/PlayerAttributes';
 import PlayerExperience from '@/components/player/PlayerExperience';
+import PlayerHighlights from '@/components/player/PlayerHighlights';
 import PlayerTeamFit from '@/components/player/PlayerTeamFit';
-import { playerData, radarData, statsData } from '@/components/player/PlayerData';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth, PlayerExperience as PlayerExperienceType } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import ProfileEditForm from '@/components/player/ProfileEditForm';
 
-const PlayerProfilePage = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { user, profile } = useAuth();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [playerProfile, setPlayerProfile] = useState<any>(null);
-  const [playerMedia, setPlayerMedia] = useState<any[]>([]);
-  const [playerExperiences, setPlayerExperiences] = useState<PlayerExperienceType[]>([]);
-  const [notFound, setNotFound] = useState(false);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
+import { playerData } from '@/components/player/PlayerData';
+import type { PlayerExperience as PlayerExperienceType } from '@/components/player/PlayerExperience';
 
-  const isCurrentUserProfile = user?.id === id;
+const PlayerProfilePage = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isEditing, setIsEditing] = useState(false);
+  const [playerProfile, setPlayerProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [playerExperiences, setPlayerExperiences] = useState<PlayerExperienceType[]>([]);
 
   useEffect(() => {
-    const fetchPlayerData = async () => {
+    const fetchPlayerProfile = async () => {
       if (!id) return;
       
+      setLoading(true);
+      
       try {
-        setIsLoading(true);
-        
-        // Fetch profile data
+        // Fetch the player profile from Supabase
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('*, player_details(*)')
           .eq('id', id)
           .single();
-          
-        if (profileError) {
-          if (profileError.code === 'PGRST116') {
-            // Record not found
-            setNotFound(true);
-            toast({
-              title: "Player not found",
-              description: "The player profile you're looking for doesn't exist.",
-              variant: "destructive"
-            });
-            return;
-          }
-          throw profileError;
-        }
         
-        if (!profileData || profileData.user_type !== 'player') {
-          setNotFound(true);
-          toast({
-            title: "Not a player profile",
-            description: "This profile doesn't belong to a player.",
-            variant: "destructive"
+        if (profileError) {
+          // If no data is found in Supabase, use mock data
+          console.log('Using mock player data');
+          setPlayerProfile({
+            id,
+            full_name: playerData.name,
+            avatar_url: playerData.avatar,
+            position: playerData.position,
+            age: playerData.age,
+            country: playerData.country,
+            club: playerData.club,
+            description: playerData.description,
           });
+          setPlayerExperiences(playerData.experience || []);
+          setLoading(false);
           return;
         }
         
-        // Fetch player details
-        const { data: playerData, error: playerError } = await supabase
-          .from('player_details')
-          .select('*')
-          .eq('id', id)
-          .single();
+        if (profileData) {
+          setPlayerProfile({
+            ...profileData,
+            ...profileData.player_details,
+          });
           
-        if (playerError && playerError.code !== 'PGRST116') {
-          throw playerError;
-        }
-        
-        // Fetch player media
-        const { data: mediaData, error: mediaError } = await supabase
-          .from('player_media')
-          .select('*')
-          .eq('player_id', id);
+          // Fetch player experiences
+          const { data: experiences, error: experiencesError } = await supabase
+            .from('player_experience')
+            .select('*')
+            .eq('player_id', id)
+            .order('start_date', { ascending: false });
           
-        if (mediaError) {
-          throw mediaError;
+          if (experiencesError) {
+            console.error('Error fetching player experiences:', experiencesError);
+          } else {
+            setPlayerExperiences(experiences || []);
+          }
         }
-        
-        // Fetch player experiences
-        const { data: experienceData, error: experienceError } = await supabase
-          .from('player_experience')
-          .select('*')
-          .eq('player_id', id)
-          .order('start_date', { ascending: false });
-          
-        if (experienceError) {
-          throw experienceError;
-        }
-        
-        // Combine data
-        const fullPlayerData = {
-          ...profileData,
-          ...(playerData || {}),
-          media: mediaData || []
-        };
-        
-        setPlayerProfile(fullPlayerData);
-        setPlayerMedia(mediaData || []);
-        setPlayerExperiences(experienceData || []);
-        
       } catch (error) {
-        console.error('Error fetching player data:', error);
+        console.error('Error fetching player profile:', error);
         toast({
-          title: "Error loading profile",
-          description: "There was a problem loading this player's profile.",
-          variant: "destructive"
+          title: 'Error',
+          description: 'Failed to load player profile',
+          variant: 'destructive',
         });
-        setNotFound(true);
+        
+        // Fallback to mock data
+        setPlayerProfile({
+          id,
+          full_name: playerData.name,
+          avatar_url: playerData.avatar,
+          position: playerData.position,
+          age: playerData.age,
+          country: playerData.country,
+          club: playerData.club,
+          description: playerData.description,
+        });
+        setPlayerExperiences(playerData.experience || []);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     
-    fetchPlayerData();
-  }, [id, navigate, toast]);
-
-  // If loading, show loading state
-  if (isLoading) {
+    fetchPlayerProfile();
+  }, [id, toast]);
+  
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+  
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+  
+  const handleSaveEdit = async (formData: any) => {
+    try {
+      // Update profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: formData.full_name,
+          avatar_url: formData.avatar_url,
+        })
+        .eq('id', id);
+      
+      if (profileError) throw profileError;
+      
+      // Update player_details table
+      const { error: playerDetailsError } = await supabase
+        .from('player_details')
+        .update({
+          position: formData.position,
+          age: formData.age,
+          country: formData.country,
+          club: formData.club,
+          description: formData.description,
+        })
+        .eq('id', id);
+      
+      if (playerDetailsError) throw playerDetailsError;
+      
+      setPlayerProfile({
+        ...playerProfile,
+        full_name: formData.full_name,
+        avatar_url: formData.avatar_url,
+        position: formData.position,
+        age: formData.age,
+        country: formData.country,
+        club: formData.club,
+        description: formData.description,
+      });
+      
+      toast({
+        title: 'Success',
+        description: 'Profile updated successfully',
+      });
+      
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update profile',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Determine if current user is viewing their own profile
+  const isCurrentUserProfile = user?.id === id;
+  
+  if (loading) {
     return (
-      <Layout>
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-          <p className="text-gray-600">Loading player profile...</p>
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
-      </Layout>
+      </div>
     );
   }
-
-  // If not found, show not found message
-  if (notFound) {
+  
+  if (!playerProfile) {
     return (
-      <Layout>
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-          <div className="text-xl font-semibold mb-2">Player Not Found</div>
-          <p className="text-gray-600 mb-6">The player profile you're looking for doesn't exist or you don't have permission to view it.</p>
-          <Button onClick={() => navigate('/')} variant="default">
+      <div className="container mx-auto py-8 px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Player Not Found</h1>
+          <p className="mt-2 text-muted-foreground">
+            The player profile you are looking for does not exist or has been removed.
+          </p>
+          <Button onClick={() => navigate('/')} className="mt-4">
             Go Home
           </Button>
         </div>
-      </Layout>
+      </div>
     );
   }
-
-  // Prepare data for PlayerHeader
-  const headerData = playerProfile 
-    ? {
-        name: playerProfile.full_name || 'Unknown Player',
-        position: playerProfile.position || 'Position not specified',
-        age: playerProfile.age || 0,
-        nationality: playerProfile.country || 'Unknown',
-        avatarUrl: playerProfile.avatar_url || 'https://ui-avatars.com/api/?name=Unknown+Player',
-        location: playerProfile.club || 'Not specified',
-        lastActive: 'Recently',
-        matchPercentage: 85, // Default match percentage
-        id: id
-      }
-    : { ...playerData, id };
-
-  // Process media for highlights and photos
-  const photos = playerMedia
-    .filter(item => item.media_type === 'photo')
-    .map(item => ({
-      id: item.id,
-      title: item.title,
-      url: item.media_url,
-      description: item.description
-    }));
-    
-  const videos = playerMedia
-    .filter(item => item.media_type === 'video')
-    .map(item => ({
-      id: item.id,
-      title: item.title,
-      url: item.media_url,
-      thumbnail: item.media_url,
-      duration: '00:30', // Placeholder
-      views: '0' // Placeholder
-    }));
-
+  
+  // Expand the playerData object to include missing attributes
+  const playerWithFullData = {
+    ...playerData,
+    height: "185 cm",
+    weight: "80 kg",
+    preferredFoot: "Right"
+  };
+  
   return (
-    <Layout>
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-6">
-          <Card>
-            <CardContent className="p-6">
-              {isEditingProfile ? (
-                <ProfileEditForm
-                  playerProfile={playerProfile}
-                  onCancel={() => setIsEditingProfile(false)}
-                  onSuccess={(updatedProfile) => {
-                    setPlayerProfile({...playerProfile, ...updatedProfile});
-                    setIsEditingProfile(false);
-                  }}
-                />
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                  {/* Left column - Avatar and basic info */}
-                  <div className="col-span-1 md:col-span-3">
-                    <PlayerHeader player={headerData} />
-                    
-                    {isCurrentUserProfile && (
-                      <div className="mt-4">
-                        <Button 
-                          onClick={() => setIsEditingProfile(true)} 
-                          variant="outline" 
-                          className="w-full"
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Profile
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Right column - Tabs with detailed info */}
-                  <div className="col-span-1 md:col-span-9">
-                    <Tabs defaultValue="overview">
-                      <TabsList className="mb-6 grid grid-cols-5 md:w-auto">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="stats">Stats</TabsTrigger>
-                        <TabsTrigger value="highlights">Highlights</TabsTrigger>
-                        <TabsTrigger value="experience">Experience</TabsTrigger>
-                        <TabsTrigger value="fit">Team Fit</TabsTrigger>
-                      </TabsList>
-                      
-                      {/* Overview Tab */}
-                      <TabsContent value="overview">
-                        <PlayerOverview 
-                          bio={playerProfile?.description || playerData.bio} 
-                          attributes={playerData.attributes} 
-                          radarData={radarData}
-                          contact={playerProfile ? {
-                            email: user?.email,
-                            location: playerProfile.club || 'Not specified',
-                          } : undefined}
-                        />
-                      </TabsContent>
-                      
-                      {/* Stats Tab */}
-                      <TabsContent value="stats">
-                        <PlayerStats 
-                          stats={playerData.stats} 
-                          statsData={statsData} 
-                          recentPerformance={playerData.recentPerformance}
-                        />
-                      </TabsContent>
-                      
-                      {/* Highlights Tab */}
-                      <TabsContent value="highlights">
-                        <PlayerHighlights 
-                          mediaItems={videos.length > 0 ? videos : playerData.highlights} 
-                          photoItems={photos.length > 0 ? photos : []} 
-                          isCurrentUserProfile={isCurrentUserProfile}
-                          playerId={id || ''}
-                        />
-                      </TabsContent>
-                      
-                      {/* Experience Tab */}
-                      <TabsContent value="experience">
-                        <PlayerExperience 
-                          experiences={playerExperiences.length > 0 ? playerExperiences : playerData.experience}
-                          education={playerData.education}
-                          isCurrentUserProfile={isCurrentUserProfile}
-                          playerId={id || ''}
-                        />
-                      </TabsContent>
-                      
-                      {/* Team Fit Tab */}
-                      <TabsContent value="fit">
-                        <PlayerTeamFit matchPercentage={playerData.matchPercentage} />
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+    <div className="container mx-auto py-8 px-4 max-w-7xl">
+      {isEditing ? (
+        <div className="bg-card rounded-lg shadow-sm border p-6">
+          <h2 className="text-2xl font-bold mb-6">Edit Profile</h2>
+          <ProfileEditForm 
+            playerData={playerProfile}
+            onSave={handleSaveEdit}
+            onCancel={handleCancelEdit}
+          />
         </div>
-      </div>
-    </Layout>
+      ) : (
+        <>
+          <PlayerHeader 
+            name={playerProfile.full_name}
+            position={playerProfile.position}
+            club={playerProfile.club}
+            country={playerProfile.country}
+            avatarUrl={playerProfile.avatar_url}
+            verified={true}
+            isCurrentUserProfile={isCurrentUserProfile}
+            onEditClick={handleEditClick}
+          />
+          
+          <div className="mt-8">
+            <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="stats">Statistics</TabsTrigger>
+                <TabsTrigger value="attributes">Attributes</TabsTrigger>
+                <TabsTrigger value="experience">Experience</TabsTrigger>
+                <TabsTrigger value="media">Media</TabsTrigger>
+                <TabsTrigger value="team-fit">Team Fit</TabsTrigger>
+              </TabsList>
+              
+              <div className="mt-6">
+                <TabsContent value="overview" className="space-y-8">
+                  <PlayerOverview 
+                    description={playerProfile.description || 'No description available.'}
+                    age={playerProfile.age || 'N/A'}
+                    position={playerProfile.position || 'N/A'}
+                    height={playerWithFullData.height || 'Not specified'}
+                    weight={playerWithFullData.weight || 'Not specified'}
+                    foot={playerWithFullData.preferredFoot || 'Not specified'}
+                    nationality={playerProfile.country || 'N/A'}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="stats" className="space-y-8">
+                  <PlayerStats 
+                    statsData={[
+                      { label: "Goals", value: 12, changeDirection: "up", changeValue: 3 },
+                      { label: "Assists", value: 8, changeDirection: "up", changeValue: 2 },
+                      { label: "Matches", value: 28, changeDirection: "neutral" },
+                      { label: "Minutes Played", value: 2340, changeDirection: "up", changeValue: 340 },
+                      { label: "Yellow Cards", value: 3, changeDirection: "down", changeValue: 1 },
+                      { label: "Red Cards", value: 0, changeDirection: "neutral" },
+                    ]}
+                    recentPerformance={[
+                      { date: "2024-05-08", opponent: "FC Barcelona", result: "W 2-1", goals: 1, assists: 0, rating: 8.4 },
+                      { date: "2024-05-03", opponent: "Real Madrid", result: "D 1-1", goals: 0, assists: 1, rating: 7.9 },
+                      { date: "2024-04-27", opponent: "Atletico Madrid", result: "L 0-2", goals: 0, assists: 0, rating: 6.5 },
+                    ]}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="attributes" className="space-y-8">
+                  <PlayerAttributes 
+                    attributes={
+                      Array.isArray(playerData.attributes)
+                        ? playerData.attributes.reduce((acc: any, attr: any) => {
+                            acc[attr.name.toLowerCase()] = attr.value;
+                            return acc;
+                          }, {})
+                        : playerData.attributes
+                    }
+                    radarData={[
+                      { subject: 'Pace', A: 80, fullMark: 100 },
+                      { subject: 'Shooting', A: 75, fullMark: 100 },
+                      { subject: 'Passing', A: 82, fullMark: 100 },
+                      { subject: 'Dribbling', A: 85, fullMark: 100 },
+                      { subject: 'Defending', A: 45, fullMark: 100 },
+                      { subject: 'Physical', A: 68, fullMark: 100 },
+                    ]}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="experience" className="space-y-8">
+                  <PlayerExperience 
+                    experiences={playerExperiences}
+                    isCurrentUserProfile={isCurrentUserProfile}
+                    playerId={id || ''}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="media" className="space-y-8">
+                  <PlayerHighlights highlights={playerProfile.highlights || []} />
+                </TabsContent>
+                
+                <TabsContent value="team-fit" className="space-y-8">
+                  <PlayerTeamFit matchPercentage={92} />
+                </TabsContent>
+              </div>
+            </Tabs>
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 

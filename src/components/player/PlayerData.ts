@@ -1,133 +1,125 @@
 
-// This file contains the mock player data that was previously in the PlayerProfilePage component
+import { Match } from '@/services/matchingService';
 
-// Mock player data
+export interface Attribute {
+  name: string;
+  value: number;
+  color?: string;
+}
+
+export interface Highlight {
+  id: string;
+  title: string;
+  thumbnail: string;
+  videoUrl: string;
+}
+
 export const playerData = {
-  id: '1',
-  name: 'Alex Johnson',
-  age: 23,
-  nationality: 'England',
-  position: 'Forward',
-  club: 'Manchester City FC',
-  matchPercentage: 95,
-  avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
-  bio: "Dynamic forward with excellent finishing abilities and strong aerial presence. Specialized in breaking defensive lines and creating scoring opportunities. Looking for a club where I can develop further and contribute to team success.",
-  location: 'Manchester, UK',
-  lastActive: '2 hours ago',
-  stats: {
-    matches: 87,
-    goals: 54,
-    assists: 23,
-    yellowCards: 5,
-    redCards: 0
-  },
-  attributes: {
-    pace: 88,
-    shooting: 92,
-    passing: 85,
-    dribbling: 87,
-    defending: 45,
-    physical: 76
-  },
-  recentPerformance: [
-    { name: 'Match 1', goals: 2, assists: 1 },
-    { name: 'Match 2', goals: 0, assists: 2 },
-    { name: 'Match 3', goals: 1, assists: 0 },
-    { name: 'Match 4', goals: 3, assists: 1 },
-    { name: 'Match 5', goals: 1, assists: 2 },
-  ],
+  name: 'Lamine Yamal',
+  avatar: 'https://img.a.transfermarkt.technology/portrait/big/868622-1694414937.jpg',
+  position: 'Right Winger',
+  age: 16,
+  country: 'Spain',
+  club: 'FC Barcelona',
+  description: 'Lamine Yamal is a young professional footballer who plays as a winger for La Liga club Barcelona and the Spain national team. Born in 2007, he became the youngest player to appear for Barcelona in La Liga at the age of 15 years and 290 days.',
+  attributes: [
+    { name: 'Pace', value: 89, color: '#10b981' },
+    { name: 'Shooting', value: 75, color: '#10b981' },
+    { name: 'Passing', value: 82, color: '#10b981' },
+    { name: 'Dribbling', value: 87, color: '#10b981' },
+    { name: 'Defending', value: 42, color: '#ef4444' },
+    { name: 'Physical', value: 64, color: '#f59e0b' }
+  ] as Attribute[],
   highlights: [
-    { 
+    {
       id: '1',
-      title: 'Season Highlights 2024/25', 
-      url: '#', 
-      thumbnail: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-      duration: '3:42',
-      views: '12.5K'
+      title: 'Goal vs Athletic Club',
+      thumbnail: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=500&auto=format',
+      videoUrl: 'https://www.youtube.com/watch?v=example1'
     },
-    { 
+    {
       id: '2',
-      title: 'Best Goals Compilation', 
-      url: '#', 
-      thumbnail: 'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-      duration: '5:18',
-      views: '8.3K'
-    },
-    { 
-      id: '3',
-      title: 'Skills & Tricks 2024', 
-      url: '#', 
-      thumbnail: 'https://images.unsplash.com/photo-1543326727-cf6c39e8f84c?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-      duration: '2:56',
-      views: '6.7K'
-    },
-    { 
-      id: '4',
-      title: 'Match Winning Performance vs. Liverpool', 
-      url: '#', 
-      thumbnail: 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-      duration: '4:22',
-      views: '15.2K'
+      title: 'Skills and Tricks Compilation',
+      thumbnail: 'https://images.unsplash.com/photo-1590179068383-b9c69aacebd3?w=500&auto=format',
+      videoUrl: 'https://www.youtube.com/watch?v=example2'
     }
-  ],
+  ] as Highlight[],
   experience: [
-    { 
-      club: 'Manchester City FC', 
-      role: 'Forward', 
-      period: 'Jan 2023 - Present',
-      achievements: 'Top scorer of the season with 24 goals'
+    {
+      id: "exp1",
+      club: "FC Barcelona",
+      role: "First Team",
+      start_date: "2023-04-01",
+      is_current_role: true,
+      achievements: "La Liga debut, Champions League debut"
     },
-    { 
-      club: 'Leicester City', 
-      role: 'Forward', 
-      period: 'Aug 2020 - Dec 2022',
-      achievements: 'Helped team reach Champions League qualification'
+    {
+      id: "exp2",
+      club: "FC Barcelona Youth",
+      role: "La Masia Academy",
+      start_date: "2014-01-01",
+      end_date: "2023-03-31",
+      is_current_role: false,
+      achievements: "Youth League winner"
     }
-  ],
-  education: [
-    { institution: 'Manchester United Academy', qualification: 'Professional Youth Program', period: '2015 - 2020' }
   ]
 };
 
-// Transform player attributes for the radar chart
-export const radarData = [
+// Mock players for the matching system
+export const mockPlayers: Match[] = [
   {
-    subject: 'Pace',
-    A: playerData.attributes.pace,
-    fullMark: 100,
+    id: "player-1",
+    name: "Lamine Yamal",
+    type: "player",
+    matchScore: 92,
+    description: "Talented young winger with exceptional dribbling and pace",
+    avatarUrl: "https://img.a.transfermarkt.technology/portrait/big/868622-1694414937.jpg",
+    location: "Barcelona, Spain",
+    position: "Right Winger",
+    skills: ["Dribbling", "Speed", "Technique"]
   },
   {
-    subject: 'Shooting',
-    A: playerData.attributes.shooting,
-    fullMark: 100,
+    id: "player-2",
+    name: "Nico Williams",
+    type: "player",
+    matchScore: 88,
+    description: "Fast winger who excels in one-on-one situations",
+    avatarUrl: "https://img.a.transfermarkt.technology/portrait/big/709187-1664438935.jpg",
+    location: "Bilbao, Spain",
+    position: "Left Winger",
+    skills: ["Speed", "Crossing", "Dribbling"]
   },
   {
-    subject: 'Passing',
-    A: playerData.attributes.passing,
-    fullMark: 100,
+    id: "player-3",
+    name: "Gavi",
+    type: "player",
+    matchScore: 86,
+    description: "Tenacious midfielder known for his work rate and technical ability",
+    avatarUrl: "https://img.a.transfermarkt.technology/portrait/big/646667-1644501128.jpg",
+    location: "Barcelona, Spain",
+    position: "Central Midfielder",
+    skills: ["Passing", "Tackling", "Pressing"]
   },
   {
-    subject: 'Dribbling',
-    A: playerData.attributes.dribbling,
-    fullMark: 100,
+    id: "player-4",
+    name: "Jude Bellingham",
+    type: "player",
+    matchScore: 84,
+    description: "Complete midfielder who can defend and attack with equal skill",
+    avatarUrl: "https://img.a.transfermarkt.technology/portrait/big/581678-1657091290.jpg",
+    location: "Madrid, Spain",
+    position: "Attacking Midfielder",
+    skills: ["Scoring", "Passing", "Leadership"]
   },
   {
-    subject: 'Defending',
-    A: playerData.attributes.defending,
-    fullMark: 100,
-  },
-  {
-    subject: 'Physical',
-    A: playerData.attributes.physical,
-    fullMark: 100,
-  },
-];
-
-// Transform player stats for the bar chart
-export const statsData = [
-  { name: 'Matches', value: playerData.stats.matches },
-  { name: 'Goals', value: playerData.stats.goals },
-  { name: 'Assists', value: playerData.stats.assists },
-  { name: 'Yellow Cards', value: playerData.stats.yellowCards },
-  { name: 'Red Cards', value: playerData.stats.redCards },
+    id: "player-5",
+    name: "Florian Wirtz",
+    type: "player",
+    matchScore: 81,
+    description: "Creative playmaker with excellent vision and ball control",
+    avatarUrl: "https://img.a.transfermarkt.technology/portrait/big/670994-1657877148.jpg",
+    location: "Leverkusen, Germany",
+    position: "Attacking Midfielder",
+    skills: ["Vision", "Technique", "Goal-scoring"]
+  }
 ];

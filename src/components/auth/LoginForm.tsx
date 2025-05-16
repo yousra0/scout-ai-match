@@ -1,22 +1,43 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, resetPassword } = useAuth();
+
+  // Add useEffect for populating email from localStorage if rememberMe
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('rememberedEmail');
+    if (storedEmail) {
+      setEmail(storedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,16 +54,34 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await signIn(email, password);
+      const { error, data } = await signIn(email, password);
       
       if (error) {
         throw error;
       }
       
-      // Set a small timeout to ensure the auth state is updated
+      toast({
+        title: "Login successful",
+        description: "You have been logged in successfully.",
+      });
+      
+      // "Remember Me" logic - store or remove email
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+      
+      // Clear login form
+      setEmail('');
+      setPassword('');
+      
+      // Make sure we wait for authentication to complete before redirecting
       setTimeout(() => {
+        // If user is logged in successfully, navigate to home page
+        // The AuthContext will handle redirection to the profile if needed
         navigate('/');
-      }, 100);
+      }, 500); // Small timeout to ensure auth state updates
       
     } catch (error: any) {
       console.error('Login error:', error);
@@ -51,7 +90,45 @@ const LoginForm = () => {
         description: error.message || "There was a problem with your login.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!resetEmail) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address to reset your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResetLoading(true);
+    
+    try {
+      const { error } = await resetPassword(resetEmail);
+      
+      if (error) {
+        throw error;
+      }
+      
+      setResetSuccess(true);
+      toast({
+        title: "Password reset email sent",
+        description: "Check your inbox for instructions to reset your password.",
+      });
+      
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      toast({
+        title: "Password reset failed",
+        description: error.message || "There was a problem sending the password reset email.",
+        variant: "destructive",
+      });
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -79,9 +156,18 @@ const LoginForm = () => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+            <Button 
+              type="button" 
+              variant="link" 
+              className="p-0 h-auto text-sm"
+              onClick={() => {
+                setResetEmail(email);
+                setResetPasswordOpen(true);
+                setResetSuccess(false);
+              }}
+            >
               Forgot password?
-            </Link>
+            </Button>
           </div>
           <Input 
             id="password" 
@@ -126,6 +212,63 @@ const LoginForm = () => {
           Create an account
         </Link>
       </div>
+
+      {/* Password Reset Dialog */}
+      <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset your password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you instructions to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {resetSuccess ? (
+            <Alert className="bg-green-50 border-green-200">
+              <AlertCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-700">
+                If an account exists with this email, you will receive password reset instructions.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    disabled={resetLoading}
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setResetPasswordOpen(false)}
+                  disabled={resetLoading}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handlePasswordReset} disabled={resetLoading}>
+                  {resetLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    'Send reset instructions'
+                  )}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
