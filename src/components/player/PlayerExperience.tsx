@@ -1,209 +1,186 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Edit, Trash, Briefcase, CalendarIcon, Trophy } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Edit, Plus, Trash2 } from 'lucide-react';
+import { useAuth, PlayerExperience as PlayerExperienceType } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import ExperienceForm from './ExperienceForm';
 
-export interface PlayerExperience {
-  id: string;
-  club: string;
-  role: string;
-  start_date: string;
-  end_date?: string;
-  is_current_role?: boolean;
-  achievements?: string;
-}
-
 interface PlayerExperienceProps {
-  experiences: PlayerExperience[];
+  experiences: PlayerExperienceType[] | Array<{
+    club: string;
+    role: string;
+    period: string;
+    achievements: string;
+  }>;
   isCurrentUserProfile: boolean;
   playerId: string;
 }
 
 const PlayerExperience = ({ experiences, isCurrentUserProfile, playerId }: PlayerExperienceProps) => {
-  const [playerExperiences, setPlayerExperiences] = useState<PlayerExperience[]>(experiences);
+  const [editingExperience, setEditingExperience] = useState<PlayerExperienceType | null>(null);
   const [isAddingExperience, setIsAddingExperience] = useState(false);
-  const [isEditingExperience, setIsEditingExperience] = useState(false);
-  const [currentExperience, setCurrentExperience] = useState<PlayerExperience | null>(null);
+  const { addPlayerExperience, updatePlayerExperience, deletePlayerExperience } = useAuth();
   const { toast } = useToast();
   
-  const handleDelete = async (id: string) => {
+  const handleAddExperience = async (experience: Omit<PlayerExperienceType, 'id' | 'player_id'>) => {
     try {
-      const { error } = await supabase
-        .from('player_experience')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      setPlayerExperiences(playerExperiences.filter(exp => exp.id !== id));
+      await addPlayerExperience({
+        ...experience,
+        player_id: playerId
+      });
       
       toast({
-        title: 'Experience deleted',
-        description: 'The experience has been successfully removed from your profile.',
+        title: "Experience Added",
+        description: "Your experience has been added successfully."
       });
-    } catch (error: any) {
+      
+      setIsAddingExperience(false);
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Error adding experience:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete experience',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to add experience. Please try again.",
+        variant: "destructive"
       });
     }
   };
   
-  const handleAdd = () => {
-    setIsAddingExperience(true);
-  };
-  
-  const handleEdit = (experience: PlayerExperience) => {
-    setCurrentExperience(experience);
-    setIsEditingExperience(true);
-  };
-  
-  const handleAddComplete = async () => {
-    setIsAddingExperience(false);
-    // Refresh experiences from DB
-    const { data, error } = await supabase
-      .from('player_experience')
-      .select('*')
-      .eq('player_id', playerId)
-      .order('start_date', { ascending: false });
-    
-    if (!error && data) {
-      setPlayerExperiences(data);
+  const handleUpdateExperience = async (id: string, data: Partial<PlayerExperienceType>) => {
+    try {
+      await updatePlayerExperience(id, data);
+      
+      toast({
+        title: "Experience Updated",
+        description: "Your experience has been updated successfully."
+      });
+      
+      setEditingExperience(null);
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Error updating experience:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update experience. Please try again.",
+        variant: "destructive"
+      });
     }
   };
   
-  const handleEditComplete = async () => {
-    setIsEditingExperience(false);
-    setCurrentExperience(null);
-    // Refresh experiences from DB
-    const { data, error } = await supabase
-      .from('player_experience')
-      .select('*')
-      .eq('player_id', playerId)
-      .order('start_date', { ascending: false });
+  const handleDeleteExperience = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this experience?')) {
+      return;
+    }
     
-    if (!error && data) {
-      setPlayerExperiences(data);
+    try {
+      await deletePlayerExperience(id);
+      
+      toast({
+        title: "Experience Deleted",
+        description: "Your experience has been deleted successfully."
+      });
+      
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Error deleting experience:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete experience. Please try again.",
+        variant: "destructive"
+      });
     }
   };
   
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-  };
+  const isDbExperiences = experiences.length > 0 && 'id' in experiences[0];
   
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Professional Experience</h3>
-        {isCurrentUserProfile && (
-          <Button size="sm" onClick={handleAdd}>
-            <Plus className="h-4 w-4 mr-1" /> Add Experience
-          </Button>
+    <div className="space-y-6">
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Club Experience</h3>
+          {isCurrentUserProfile && (
+            <Button 
+              onClick={() => setIsAddingExperience(true)} 
+              variant="outline" 
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Experience
+            </Button>
+          )}
+        </div>
+        
+        {isAddingExperience && (
+          <div className="mb-6 p-4 border rounded-md bg-gray-50">
+            <h4 className="font-medium mb-2">Add New Experience</h4>
+            <ExperienceForm
+              onSubmit={handleAddExperience}
+              onCancel={() => setIsAddingExperience(false)}
+            />
+          </div>
         )}
-      </div>
-      
-      {playerExperiences.length > 0 ? (
-        <ScrollArea className="h-[400px] pr-4">
-          <div className="space-y-4">
-            {playerExperiences.map((experience) => (
-              <div key={experience.id} className="p-4 border rounded-md">
+        
+        {editingExperience && (
+          <div className="mb-6 p-4 border rounded-md bg-gray-50">
+            <h4 className="font-medium mb-2">Edit Experience</h4>
+            <ExperienceForm
+              experience={editingExperience}
+              onSubmit={(data) => handleUpdateExperience(editingExperience.id, data)}
+              onCancel={() => setEditingExperience(null)}
+            />
+          </div>
+        )}
+        
+        <div className="space-y-6">
+          {isDbExperiences ? (
+            (experiences as PlayerExperienceType[]).map((exp) => (
+              <div key={exp.id} className="border-l-2 border-primary pl-4 pb-6">
                 <div className="flex justify-between items-start">
-                  <div className="flex items-start space-x-3">
-                    <div className="bg-primary/10 p-2 rounded">
-                      <Briefcase className="h-5 w-5 text-primary" />
+                  <div>
+                    <h4 className="font-medium">{exp.club}</h4>
+                    <div className="text-sm text-gray-600">
+                      {exp.role} • {new Date(exp.start_date).toLocaleDateString()} to {exp.end_date ? new Date(exp.end_date).toLocaleDateString() : 'Present'}
                     </div>
-                    <div>
-                      <h4 className="font-semibold">{experience.club}</h4>
-                      <p className="text-sm text-muted-foreground">{experience.role}</p>
-                    </div>
+                    <p className="mt-1 text-sm">{exp.achievements}</p>
                   </div>
+                  
                   {isCurrentUserProfile && (
                     <div className="flex space-x-2">
-                      <Button size="icon" variant="ghost" onClick={() => handleEdit(experience)}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setEditingExperience(exp)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDelete(experience.id)}>
-                        <Trash className="h-4 w-4" />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleDeleteExperience(exp.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   )}
                 </div>
-                
-                <div className="flex items-center mt-2 text-sm text-muted-foreground">
-                  <CalendarIcon className="h-3 w-3 mr-1" />
-                  <span>
-                    {formatDate(experience.start_date)} - {experience.is_current_role ? 'Present' : formatDate(experience.end_date)}
-                  </span>
-                </div>
-                
-                {experience.achievements && (
-                  <div className="mt-2">
-                    <div className="flex items-center text-sm">
-                      <Trophy className="h-3 w-3 mr-1 text-amber-500" />
-                      <span className="font-medium">Achievements</span>
-                    </div>
-                    <p className="text-sm mt-1">{experience.achievements}</p>
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
-        </ScrollArea>
-      ) : (
-        <div className="text-center py-8 border border-dashed rounded-md">
-          <Briefcase className="h-8 w-8 mx-auto text-muted-foreground" />
-          <p className="mt-2 text-muted-foreground">No experience added yet</p>
-          {isCurrentUserProfile && (
-            <Button size="sm" variant="outline" className="mt-4" onClick={handleAdd}>
-              <Plus className="h-4 w-4 mr-1" /> Add Experience
-            </Button>
+            ))
+          ) : (
+            experiences.map((exp: any, index: number) => (
+              <div key={index} className="border-l-2 border-primary pl-4 pb-6">
+                <h4 className="font-medium">{exp.club}</h4>
+                <div className="text-sm text-gray-600">{exp.role} • {exp.period}</div>
+                <p className="mt-1 text-sm">{exp.achievements}</p>
+              </div>
+            ))
           )}
         </div>
-      )}
-      
-      <Dialog open={isAddingExperience} onOpenChange={setIsAddingExperience}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Professional Experience</DialogTitle>
-          </DialogHeader>
-          <ExperienceForm 
-            onCancel={() => setIsAddingExperience(false)} 
-            onComplete={handleAddComplete}
-            userId={playerId}
-          />
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isEditingExperience} onOpenChange={setIsEditingExperience}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Experience</DialogTitle>
-          </DialogHeader>
-          {currentExperience && (
-            <ExperienceForm 
-              onCancel={() => setIsEditingExperience(false)} 
-              onComplete={handleEditComplete}
-              userId={playerId}
-              experienceData={currentExperience}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      </div>
     </div>
   );
 };

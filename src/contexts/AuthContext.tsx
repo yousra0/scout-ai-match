@@ -1,216 +1,379 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Session, User } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
+import { useToast } from '@/hooks/use-toast';
 
-interface AuthContextType {
+// Define the types for profile
+export type ProfileType = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  user_type: 'player' | 'coach' | 'club' | 'agent' | 'sponsor' | 'equipment_supplier';
+  created_at: string;
+  updated_at: string;
+  description?: string;
+  club?: string;
+  position?: string;
+  age?: number;
+  country?: string;
+};
+
+export type PlayerExperience = {
+  id: string;
+  player_id: string;
+  club: string;
+  role: string;
+  start_date: string;
+  end_date: string | null;
+  achievements: string | null;
+};
+
+export type AuthContextType = {
+  session: Session | null;
   user: User | null;
-  profile: any | null;
+  profile: ProfileType | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any | null; data: any | null }>;
-  signUp: (email: string, password: string, userData: any) => Promise<{ error: any | null; data: any | null }>;
+  signIn: (email: string, password: string) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
+  signUp: (email: string, password: string, userData: any) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: any | null; data: any | null }>;
-  setProfile: (profile: any) => void;
-}
+  updateProfile: (profileData: Partial<ProfileType>) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
+  addPlayerExperience: (experienceData: Omit<PlayerExperience, 'id'>) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
+  updatePlayerExperience: (id: string, experienceData: Partial<PlayerExperience>) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
+  deletePlayerExperience: (id: string) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [session, setSession] = useState<Session | null>(null);
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
-  // Clean up auth state to avoid limbo states
-  const cleanupAuthState = () => {
-    // Remove standard auth tokens
-    localStorage.removeItem('supabase.auth.token');
-    // Remove all Supabase auth keys from localStorage
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        localStorage.removeItem(key);
-      }
-    });
-    // Remove from sessionStorage if in use
-    Object.keys(sessionStorage || {}).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        sessionStorage.removeItem(key);
-      }
-    });
-  };
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<ProfileType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      console.log('Auth state changed', event);
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      // Clear profile if user signs out
-      if (event === 'SIGNED_OUT') {
-        setProfile(null);
+    // Set up session listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        setUser(session?.user || null);
+        
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
+        
+        setIsLoading(false);
       }
-    });
+    );
 
-    // THEN check for existing session
-    const getInitialSession = async () => {
+    // Initial session check
+    const initializeAuth = async () => {
       try {
-        setIsLoading(true);
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user || null);
         
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-        
-        // If we have a user, fetch their profile
-        if (initialSession?.user) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*, player_details(*), coach_details(*), club_details(*), agent_details(*)')
-            .eq('id', initialSession.user.id)
-            .single();
-          
-          if (profileData) {
-            setProfile(profileData);
-          }
+        if (session?.user) {
+          await fetchProfile(session.user.id);
         }
       } catch (error) {
-        console.error('Error getting initial session:', error);
+        console.error('Error getting session:', error);
+        toast({
+          title: "Authentication Error",
+          description: "There was a problem retrieving your session.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    getInitialSession();
+    initializeAuth();
 
     return () => {
       subscription.unsubscribe();
     };
   }, []);
 
-  // When user changes, fetch profile data
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user) return;
-      
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*, player_details(*), coach_details(*), club_details(*), agent_details(*)')
-          .eq('id', user.id)
-          .single();
+  // Fetch user profile from profiles table
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
         
-        if (data) {
-          setProfile(data);
-        }
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
+      if (error) {
+        throw error;
       }
-    };
-    
-    // Use setTimeout to prevent potential deadlocks
-    if (user) {
-      setTimeout(() => {
-        fetchUserProfile();
-      }, 0);
+      
+      if (data) {
+        setProfile(data as ProfileType);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast({
+        title: "Profile Error",
+        description: "Could not fetch your profile data.",
+        variant: "destructive",
+      });
     }
-  }, [user]);
+  };
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Clean up existing state
-      cleanupAuthState();
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
-      // Attempt global sign out
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { data: null, error };
       }
       
-      // Sign in with email/password
-      const response = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
       });
       
-      return response;
+      return { data, error: null };
     } catch (error) {
-      console.error('Error signing in:', error);
-      return { error, data: null };
+      console.error('Sign in error:', error);
+      toast({
+        title: "Login Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+      return { data: null, error };
     }
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
-    // Clean up existing state
-    cleanupAuthState();
-    
     try {
-      const response = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             fullName: userData.fullName,
             userType: userData.userType,
-            avatar: userData.avatar,
-            ...userData,
-          },
-        },
+            avatar: userData.avatar || null,
+            ...userData
+          }
+        }
       });
       
-      return response;
+      if (error) {
+        toast({
+          title: "Registration Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { data: null, error };
+      }
+      
+      toast({
+        title: "Registration Successful",
+        description: "Please check your email to confirm your account.",
+      });
+      
+      return { data, error: null };
     } catch (error) {
-      console.error('Error signing up:', error);
-      return { error, data: null };
+      console.error('Sign up error:', error);
+      toast({
+        title: "Registration Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+      return { data: null, error };
     }
   };
 
   const signOut = async () => {
     try {
-      // Clean up auth state
-      cleanupAuthState();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       
-      // Attempt global sign out (fallback if it fails)
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Ignore errors
+      // Clear all user state
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      
+      return;
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast({
+        title: "Logout Error",
+        description: "There was a problem signing you out.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const updateProfile = async (profileData: Partial<ProfileType>) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to update your profile.",
+        variant: "destructive",
+      });
+      return { data: null, error: new Error("Authentication required") };
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', user.id)
+        .select()
+        .single();
+        
+      if (error) {
+        toast({
+          title: "Update Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { data: null, error };
       }
       
-      // Force page reload for a clean state
-      window.location.href = '/';
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
+      });
+      
+      // Update local state
+      if (data) {
+        setProfile(data as ProfileType);
+      }
+      
+      return { data, error: null };
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Profile update error:', error);
+      toast({
+        title: "Update Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+      return { data: null, error };
+    }
+  };
+  
+  const addPlayerExperience = async (experienceData: Omit<PlayerExperience, 'id'>) => {
+    if (!user) {
+      return { data: null, error: new Error("Authentication required") };
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('player_experience')
+        .insert({ ...experienceData, player_id: user.id })
+        .select()
+        .single();
+        
+      if (error) {
+        return { data: null, error };
+      }
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Experience add error:', error);
+      return { data: null, error };
+    }
+  };
+  
+  const updatePlayerExperience = async (id: string, experienceData: Partial<PlayerExperience>) => {
+    if (!user) {
+      return { data: null, error: new Error("Authentication required") };
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('player_experience')
+        .update(experienceData)
+        .eq('id', id)
+        .eq('player_id', user.id) // Security check
+        .select()
+        .single();
+        
+      if (error) {
+        return { data: null, error };
+      }
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Experience update error:', error);
+      return { data: null, error };
+    }
+  };
+  
+  const deletePlayerExperience = async (id: string) => {
+    if (!user) {
+      return { data: null, error: new Error("Authentication required") };
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('player_experience')
+        .delete()
+        .eq('id', id)
+        .eq('player_id', user.id); // Security check
+        
+      if (error) {
+        return { data: null, error };
+      }
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Experience delete error:', error);
+      return { data: null, error };
     }
   };
 
-  const resetPassword = async (email: string) => {
-    try {
-      const response = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      
-      return response;
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      return { error, data: null };
-    }
+  const value = {
+    session,
+    user,
+    profile,
+    isLoading,
+    signIn,
+    signUp,
+    signOut,
+    updateProfile,
+    addPlayerExperience,
+    updatePlayerExperience,
+    deletePlayerExperience
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        profile,
-        isLoading,
-        signIn,
-        signUp,
-        signOut,
-        resetPassword,
-        setProfile,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

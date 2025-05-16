@@ -1,62 +1,120 @@
+
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Award, BookOpen, Briefcase, Calendar, MapPin, Star, Tag, Zap, RefreshCw } from 'lucide-react';
+import { Award, BookOpen, Briefcase, Calendar, MapPin, Star, Tag, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Recommendation, getRecommendations } from '@/services/recommendationService';
+
+type Recommendation = {
+  id: string;
+  title: string;
+  type: 'player' | 'club' | 'event' | 'course' | 'opportunity';
+  category: string;
+  description: string;
+  imageUrl?: string;
+  location?: string;
+  date?: string;
+  tags?: string[];
+  reason: string;
+};
 
 const RecommendationsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [activeTab, setActiveTab] = useState<string>('all');
   const { toast } = useToast();
-  const { user, profile } = useAuth();
-
-  const fetchRecommendations = async () => {
-    setIsLoading(true);
-    try {
-      let fetchedRecommendations: Recommendation[];
-      
-      if (user) {
-        // Use recommendation service for all types
-        // Default to showing 'player' recommendations if 'all', else use tab
-        const type = (activeTab === 'all' ? 'player' : activeTab) as any;
-        fetchedRecommendations = await getRecommendations(user.id, type, 10);
-      } else {
-        // Fall back to mock recommendations for demo purposes
-        fetchedRecommendations = mockRecommendations;
-      }
-      setRecommendations(fetchedRecommendations);
-    } catch (error) {
-      console.error('Error fetching recommendations:', error);
-      toast({
-        title: "Error loading recommendations",
-        description: "Failed to load recommendation data. Please try again later.",
-        variant: "destructive",
-      });
-      // Fall back to mock data on error
-      setRecommendations(mockRecommendations);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { profile } = useAuth();
 
   useEffect(() => {
+    // In a real app, this would fetch from your ML recommendation API
+    // based on the user's profile and preferences
+    const fetchRecommendations = async () => {
+      setIsLoading(true);
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Mock data - in real app would come from backend
+        const mockRecommendations: Recommendation[] = [
+          {
+            id: '1',
+            title: 'Advanced Finishing Techniques',
+            type: 'course',
+            category: 'Training',
+            description: 'Master the art of clinical finishing with this comprehensive course',
+            imageUrl: 'https://images.unsplash.com/photo-1593341646782-e0b495cff86d',
+            tags: ['Technical', 'Attacking', 'Shooting'],
+            reason: 'Based on your position and skill development goals'
+          },
+          {
+            id: '2',
+            title: 'Youth Tournament - Barcelona',
+            type: 'event',
+            category: 'Competition',
+            description: 'International youth tournament with scouts from top European clubs',
+            imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55',
+            location: 'Barcelona, Spain',
+            date: 'June 15-20, 2025',
+            reason: 'Matches your age group and performance level'
+          },
+          {
+            id: '3',
+            title: 'FC Ajax Youth Academy',
+            type: 'club',
+            category: 'Academy',
+            description: 'Renowned for developing technical players with strong fundamentals',
+            imageUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/79/Ajax_Amsterdam.svg/1200px-Ajax_Amsterdam.svg.png',
+            location: 'Amsterdam, Netherlands',
+            reason: 'Aligns with your playing style and development needs'
+          },
+          {
+            id: '4',
+            title: 'Mental Strength Coach - Sarah Williams',
+            type: 'player',
+            category: 'Coaching',
+            description: 'Sports psychologist specializing in young athlete mental preparation',
+            location: 'Online Sessions Available',
+            reason: 'Could help improve your mental game based on recent performances'
+          },
+          {
+            id: '5',
+            title: 'Trial Opportunity - Brighton & Hove U23',
+            type: 'opportunity',
+            category: 'Trial',
+            description: 'Week-long trial with Premier League club\'s U23 team',
+            location: 'Brighton, UK',
+            date: 'July 10-17, 2025',
+            reason: 'Matches your skill level and career aspirations'
+          }
+        ];
+        
+        setRecommendations(mockRecommendations);
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
+        toast({
+          title: "Error loading recommendations",
+          description: "Failed to load recommendation data. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
     fetchRecommendations();
-    // eslint-disable-next-line
-  }, [user, toast, activeTab]);
-
+  }, [toast]);
+  
   const filteredRecommendations = activeTab === 'all' 
     ? recommendations 
     : recommendations.filter(rec => rec.type === activeTab);
-
+  
   // Get icon based on type
   const getIcon = (type: string) => {
     switch (type) {
@@ -69,26 +127,20 @@ const RecommendationsPage = () => {
     }
   };
 
+  const getCategoryIcon = (type: string) => {
+    return <Tag className="h-4 w-4 text-gray-500" />;
+  };
+
   return (
     <Layout>
       <div className="container mx-auto py-8 px-4">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Personalized Recommendations</h1>
-            <p className="text-muted-foreground">
-              Tailored recommendations based on your profile, activity, and goals
-            </p>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={fetchRecommendations} 
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Personalized Recommendations</h1>
+          <p className="text-muted-foreground">
+            Tailored recommendations based on your profile, activity, and goals
+          </p>
         </div>
+        
         <Tabs defaultValue="all" className="mb-8" onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="all">All</TabsTrigger>
@@ -96,12 +148,12 @@ const RecommendationsPage = () => {
             <TabsTrigger value="event">Events</TabsTrigger>
             <TabsTrigger value="course">Courses</TabsTrigger>
             <TabsTrigger value="opportunity">Opportunities</TabsTrigger>
-            <TabsTrigger value="player">Players</TabsTrigger>
-            <TabsTrigger value="coach">Coaches</TabsTrigger>
           </TabsList>
+          
           <TabsContent value={activeTab}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoading ? (
+                // Loading skeletons
                 Array(6).fill(0).map((_, index) => (
                   <Card key={index} className="overflow-hidden">
                     <div className="aspect-video w-full bg-muted">
@@ -124,29 +176,33 @@ const RecommendationsPage = () => {
               ) : filteredRecommendations.length > 0 ? (
                 filteredRecommendations.map(rec => (
                   <Card key={rec.id} className="overflow-hidden">
-                    <div className="aspect-video w-full bg-muted relative overflow-hidden flex items-center justify-center">
-                      {rec.avatar ? (
+                    {rec.imageUrl && (
+                      <div className="aspect-video w-full bg-muted relative overflow-hidden">
                         <img 
-                          src={rec.avatar}
-                          alt={rec.name}
-                          className="w-16 h-16 object-cover rounded-full border-2 border-primary"
+                          src={rec.imageUrl} 
+                          alt={rec.title} 
+                          className="w-full h-full object-cover"
                         />
-                      ) : (
-                        <Avatar>
-                          <AvatarFallback>{rec.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
+                        <div className="absolute top-2 right-2">
+                          <Badge className="bg-background/80 text-foreground">
+                            {rec.type.charAt(0).toUpperCase() + rec.type.slice(1)}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
                     <CardHeader className="pb-2">
                       <div className="flex items-center gap-2 mb-1">
                         {getIcon(rec.type)}
-                        <CardTitle className="text-lg">{rec.name}</CardTitle>
+                        <CardTitle className="text-lg">{rec.title}</CardTitle>
                       </div>
+                      <CardDescription className="flex items-center gap-1">
+                        {getCategoryIcon(rec.category)}
+                        <span>{rec.category}</span>
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {rec.description && (
-                        <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
-                      )}
+                      <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
+                      
                       <div className="flex flex-col space-y-1 text-sm">
                         {rec.location && (
                           <div className="flex items-center gap-1 text-muted-foreground">
@@ -154,7 +210,15 @@ const RecommendationsPage = () => {
                             <span>{rec.location}</span>
                           </div>
                         )}
+                        
+                        {rec.date && (
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>{rec.date}</span>
+                          </div>
+                        )}
                       </div>
+                      
                       {rec.tags && rec.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-3">
                           {rec.tags.map(tag => (
@@ -164,24 +228,18 @@ const RecommendationsPage = () => {
                           ))}
                         </div>
                       )}
+                      
                       <Separator className="my-3" />
+                      
                       <div className="text-xs text-muted-foreground flex items-start gap-1">
                         <Zap className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
                         <span>
-                          <strong className="font-medium text-primary">Top match!</strong>
+                          <strong className="font-medium text-primary">Why we recommend this:</strong> {rec.reason}
                         </span>
                       </div>
                     </CardContent>
                     <CardFooter className="border-t bg-muted/20 pt-3 pb-3">
-                      <Button 
-                        size="sm" 
-                        className="w-full"
-                        asChild
-                      >
-                        <a href={`/${rec.type}s/${rec.id}`}>
-                          Explore This {rec.type.charAt(0).toUpperCase() + rec.type.slice(1)}
-                        </a>
-                      </Button>
+                      <Button size="sm" className="w-full">Explore This Recommendation</Button>
                     </CardFooter>
                   </Card>
                 ))
@@ -197,69 +255,5 @@ const RecommendationsPage = () => {
     </Layout>
   );
 };
-
-// Mock recommendations for development and fallback purposes
-const mockRecommendations: Recommendation[] = [
-  {
-    id: 'club-1',
-    name: 'FC Barcelona',
-    type: 'club',
-    avatar: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/79/Ajax_Amsterdam.svg/1200px-Ajax_Amsterdam.svg.png',
-    matchPercentage: 86,
-    location: 'Amsterdam, Netherlands',
-    description: 'Renowned for developing technical players with strong fundamentals',
-    tags: ['Academy', 'Spain']
-  },
-  {
-    id: 'player-1',
-    name: 'John Smith',
-    type: 'player',
-    avatar: 'https://randomuser.me/api/portraits/men/10.jpg',
-    matchPercentage: 92,
-    location: 'USA',
-    description: 'Fast and dynamic forward with keen eye for goal.',
-    tags: ['Forward']
-  },
-  {
-    id: 'coach-1',
-    name: 'Marco Rossi',
-    type: 'coach',
-    avatar: 'https://randomuser.me/api/portraits/men/15.jpg',
-    matchPercentage: 93,
-    location: 'Milan, Italy',
-    description: "Specializes in developing young attacking talent",
-    tags: ['Head Coach']
-  },
-  {
-    id: 'agent-1',
-    name: 'Elite Sports Agency',
-    type: 'agent',
-    avatar: 'https://randomuser.me/api/portraits/men/12.jpg',
-    matchPercentage: 88,
-    location: 'Paris, France',
-    description: 'Specializing in career development for young talents',
-    tags: ['Transfers']
-  },
-  {
-    id: 'sponsor-1',
-    name: 'Global Sports Foundation',
-    type: 'sponsor',
-    avatar: 'https://randomuser.me/api/portraits/men/14.jpg',
-    matchPercentage: 85,
-    location: 'New York, USA',
-    description: 'Supporting the next generation of sports stars',
-    tags: ['Grants']
-  },
-  {
-    id: 'equip-1',
-    name: 'SportEquip Pro',
-    type: 'equipment_supplier',
-    avatar: 'https://randomuser.me/api/portraits/men/13.jpg',
-    matchPercentage: 84,
-    location: 'Berlin, Germany',
-    description: 'Custom equipment for professional athletes',
-    tags: ['Custom Shoes']
-  }
-];
 
 export default RecommendationsPage;

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
@@ -12,105 +13,316 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Mail, Phone, MapPin, ExternalLink, Users, Calendar, Trophy, Building, Award, Briefcase } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  fetchStakeholder, 
-  Stakeholder,
-  StakeholderType,
-  ClubStakeholder,
-  CoachStakeholder,
-  AgentStakeholder,
-  ServiceProviderStakeholder
-} from '@/services/stakeholderService';
+
+// Define specific types for each stakeholder type
+interface BaseStakeholder {
+  name: string;
+  type: string;
+  avatar: string;
+  coverImage: string;
+  location: string;
+  description: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  highlights: {
+    title: string;
+    url: string;
+    thumbnail: string;
+  }[];
+  photos: {
+    url: string;
+    caption: string;
+  }[];
+}
+
+interface ClubProfile extends BaseStakeholder {
+  founded: string;
+  league: string;
+  stadium: string;
+  capacity: string;
+  manager: string;
+  achievements: string[];
+  players: string[];
+  sponsors: string[];
+}
+
+interface CoachProfile extends BaseStakeholder {
+  role: string;
+  club: string;
+  experience: string;
+  previousClubs: string[];
+  achievements: string[];
+}
+
+interface AgentProfile extends BaseStakeholder {
+  agency: string;
+  license: string;
+  experience: string;
+  clients: string[];
+  specialties: string[];
+}
+
+interface ServiceProviderProfile extends BaseStakeholder {
+  founded: string;
+  services: string[];
+  certifications: string[];
+  clients: string[];
+}
+
+// Union type for all stakeholder types
+type StakeholderData = ClubProfile | CoachProfile | AgentProfile | ServiceProviderProfile;
 
 // Type guard functions to check the type of stakeholder
-const isClub = (stakeholder: Stakeholder): stakeholder is ClubStakeholder => 
+const isClub = (stakeholder: StakeholderData): stakeholder is ClubProfile => 
   stakeholder.type === 'club';
 
-const isCoach = (stakeholder: Stakeholder): stakeholder is CoachStakeholder => 
+const isCoach = (stakeholder: StakeholderData): stakeholder is CoachProfile => 
   stakeholder.type === 'coach';
 
-const isAgent = (stakeholder: Stakeholder): stakeholder is AgentStakeholder => 
+const isAgent = (stakeholder: StakeholderData): stakeholder is AgentProfile => 
   stakeholder.type === 'agent';
 
-const isServiceProvider = (stakeholder: Stakeholder): stakeholder is ServiceProviderStakeholder => 
+const isServiceProvider = (stakeholder: StakeholderData): stakeholder is ServiceProviderProfile => 
   ['equipment_supplier', 'sponsor'].includes(stakeholder.type);
 
+// Mock data for different stakeholder types
+const mockStakeholderData: Record<string, StakeholderData> = {
+  'club': {
+    name: 'FC Barcelona',
+    type: 'club',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/1200px-FC_Barcelona_%28crest%29.svg.png',
+    coverImage: 'https://images.unsplash.com/photo-1508098682722-e99c643e7485?q=80&w=1470&auto=format&fit=crop',
+    location: 'Barcelona, Spain',
+    founded: '1899',
+    league: 'La Liga',
+    stadium: 'Camp Nou',
+    capacity: '99,354',
+    manager: 'Xavi Hernandez',
+    description: 'FC Barcelona is a professional football club based in Barcelona, Catalonia, Spain, that competes in La Liga, the top flight of Spanish football.',
+    achievements: [
+      '26x La Liga Champions',
+      '5x UEFA Champions League winners',
+      '31x Copa del Rey winners'
+    ],
+    players: [
+      'Robert Lewandowski',
+      'Lamine Yamal',
+      'Pedri',
+      'Ilkay Gündogan'
+    ],
+    sponsors: [
+      'Nike',
+      'Spotify',
+      'Beko'
+    ],
+    email: 'info@fcbarcelona.com',
+    phone: '+34 902 1899 00',
+    website: 'https://www.fcbarcelona.com',
+    highlights: [
+      {
+        title: 'Barcelona vs Real Madrid - El Clásico Highlights',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        thumbnail: 'https://images.unsplash.com/photo-1518604100146-5d424ab3faae?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NTB8fHNvY2NlcnxlbnwwfHwwfHx8MA%3D%3D'
+      },
+      {
+        title: 'Champions League Final',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        thumbnail: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDB8fHNvY2NlcnxlbnwwfHwwfHx8MA%3D%3D'
+      }
+    ],
+    photos: [
+      {
+        url: 'https://images.unsplash.com/photo-1552667466-07770ae110d0?q=80&w=1470&auto=format&fit=crop',
+        caption: 'Camp Nou Stadium'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1578019239250-e8ed079abdde?q=80&w=1374&auto=format&fit=crop',
+        caption: 'Team celebration'
+      }
+    ]
+  },
+  'coach': {
+    name: 'José Mourinho',
+    type: 'coach',
+    avatar: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Jos%C3%A9_Mourinho.jpg/1200px-Jos%C3%A9_Mourinho.jpg',
+    coverImage: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1493&auto=format&fit=crop',
+    location: 'London, UK',
+    role: 'Head Coach',
+    club: 'AS Roma',
+    experience: '20+ years',
+    previousClubs: [
+      'Chelsea FC',
+      'Real Madrid',
+      'Manchester United',
+      'Inter Milan',
+      'Tottenham Hotspur'
+    ],
+    description: 'José Mourinho is one of the most successful and controversial football managers of all time, known for his tactical knowledge and psychological skills.',
+    achievements: [
+      '2x UEFA Champions League winner',
+      '3x Premier League winner',
+      '2x Serie A winner',
+      '1x La Liga winner'
+    ],
+    email: 'jose@specialone.com',
+    phone: '+44 123 456 7890',
+    highlights: [
+      {
+        title: 'Mourinho\'s Greatest Moments',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        thumbnail: 'https://images.unsplash.com/photo-1570498839593-e565b39455fc?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8ODB8fHNvY2NlcnxlbnwwfHwwfHx8MA%3D%3D'
+      }
+    ],
+    photos: [
+      {
+        url: 'https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?q=80&w=1467&auto=format&fit=crop',
+        caption: 'Training session'
+      }
+    ]
+  },
+  'agent': {
+    name: 'Jorge Mendes',
+    type: 'agent',
+    avatar: 'https://upload.wikimedia.org/wikipedia/commons/c/c0/Jorge_Mendes_2019_%28cropped%29.jpg',
+    coverImage: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=1471&auto=format&fit=crop',
+    location: 'Lisbon, Portugal',
+    agency: 'Gestifute',
+    license: 'FIFA Licensed Agent',
+    experience: '25+ years',
+    clients: [
+      'Cristiano Ronaldo',
+      'João Félix',
+      'Rúben Dias',
+      'Diogo Jota'
+    ],
+    description: 'Jorge Mendes is a Portuguese football agent who represents many high-profile football players and coaches.',
+    specialties: [
+      'Contract Negotiation',
+      'Player Development',
+      'Commercial Deals',
+      'Career Management'
+    ],
+    email: 'contact@gestifute.com',
+    phone: '+351 123 456 789',
+    highlights: [
+      {
+        title: 'Jorge Mendes: The Super Agent',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        thumbnail: 'https://images.unsplash.com/photo-1621570073492-101a8533017e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c3BvcnRzJTIwYWdlbnR8ZW58MHx8MHx8fDA%3D'
+      }
+    ],
+    photos: [
+      {
+        url: 'https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?q=80&w=1374&auto=format&fit=crop',
+        caption: 'Business meeting'
+      }
+    ]
+  },
+  'equipment_supplier': {
+    name: 'Elite Sports Equipment',
+    type: 'equipment_supplier',
+    avatar: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=1470&auto=format&fit=crop',
+    coverImage: 'https://images.unsplash.com/photo-1571902943202-507ec2618b04?q=80&w=1375&auto=format&fit=crop',
+    location: 'Manchester, UK',
+    founded: '1998',
+    description: 'Elite Sports Equipment is a leading provider of high-quality football equipment and training gear for professional clubs and academies.',
+    services: [
+      'Professional Match Balls',
+      'Training Equipment',
+      'Goal Technology',
+      'Performance Analysis Tools'
+    ],
+    certifications: [
+      'FIFA Approved Supplier',
+      'ISO 9001 Certified',
+      'Football Foundation Partner'
+    ],
+    clients: [
+      'Premier League',
+      'UEFA',
+      'Manchester City Academy',
+      'Dutch Football Association'
+    ],
+    email: 'sales@elitesports.com',
+    phone: '+44 161 123 4567',
+    website: 'https://www.elitesportsequipment.com',
+    highlights: [
+      {
+        title: 'Elite Sports Equipment - Product Showcase',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        thumbnail: 'https://images.unsplash.com/photo-1526232636376-53d03f24f092?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTZ8fHNwb3J0cyUyMGVxdWlwbWVudHxlbnwwfHwwfHx8MA%3D%3D'
+      }
+    ],
+    photos: [
+      {
+        url: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?q=80&w=1507&auto=format&fit=crop',
+        caption: 'Football equipment line'
+      }
+    ]
+  },
+  'sponsor': {
+    name: 'Global Finance Group',
+    type: 'sponsor',
+    avatar: 'https://images.unsplash.com/photo-1560472355-536de3962603?q=80&w=1470&auto=format&fit=crop',
+    coverImage: 'https://images.unsplash.com/photo-1560520653-9eb1de890f0b?q=80&w=1473&auto=format&fit=crop',
+    location: 'London, UK',
+    founded: '1982',
+    description: 'Global Finance Group is a multinational financial services company with major sponsorship deals across European football.',
+    services: [
+      'Main Kit Sponsorship',
+      'Stadium Naming Rights',
+      'Youth Academy Support',
+      'Financial Services for Athletes'
+    ],
+    certifications: [
+      'Financial Conduct Authority Regulated',
+      'European Sponsorship Association Award Winner'
+    ],
+    clients: [
+      'Arsenal FC',
+      'Juventus',
+      'Borussia Dortmund',
+      'Ajax Amsterdam'
+    ],
+    email: 'partnerships@globalfinance.com',
+    phone: '+44 207 123 4567',
+    website: 'https://www.globalfinancegroup.com',
+    highlights: [
+      {
+        title: 'Global Finance Group - Football Partnerships',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        thumbnail: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29ycG9yYXRlfGVufDB8fDB8fHww'
+      }
+    ],
+    photos: [
+      {
+        url: 'https://images.unsplash.com/photo-1529119513315-c7c361228d67?q=80&w=1374&auto=format&fit=crop',
+        caption: 'Sponsorship announcement'
+      }
+    ]
+  }
+};
+
 const StakeholderProfilePage = () => {
-  const { type, id } = useParams<{ type?: string; id?: string }>();
+  const { type, id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
-  const [stakeholderData, setStakeholderData] = useState<Stakeholder | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [stakeholderData, setStakeholderData] = useState<StakeholderData | null>(null);
 
   useEffect(() => {
-    const loadStakeholder = async () => {
-      setLoading(true);
-      
-      if (!type || !id) {
-        toast({
-          title: "Invalid URL",
-          description: "Missing stakeholder type or ID in the URL",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Remove trailing 's' if present to get singular type (e.g., 'players' -> 'player')
-      const singularType = type.endsWith('s') ? type.slice(0, -1) : type;
-      
-      // Validate stakeholder type
-      const validTypes: StakeholderType[] = ['player', 'coach', 'club', 'agent', 'sponsor', 'equipment_supplier'];
-      const stakeholderType = validTypes.includes(singularType as StakeholderType) 
-        ? singularType as StakeholderType
-        : 'club'; // Default to club if invalid type
-      
-      try {
-        const stakeholder = await fetchStakeholder(stakeholderType, id);
-        if (stakeholder) {
-          setStakeholderData(stakeholder);
-        } else {
-          toast({
-            title: "Not Found",
-            description: `The ${stakeholderType} profile could not be found`,
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        console.error("Error loading stakeholder:", error);
-        toast({
-          title: "Error",
-          description: `Failed to load ${stakeholderType} profile`,
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadStakeholder();
-  }, [type, id, toast]);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto p-8 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-4 text-muted-foreground">Loading profile...</p>
-      </div>
-    );
-  }
+    // In a real app, we would fetch the data from an API
+    // For now, we use mock data based on type
+    if (type && mockStakeholderData[type]) {
+      setStakeholderData(mockStakeholderData[type]);
+    } else {
+      // Default to club data if type is not found
+      setStakeholderData(mockStakeholderData['club']);
+    }
+  }, [type, id]);
 
   if (!stakeholderData) {
-    return (
-      <div className="container mx-auto p-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Profile Not Found</h1>
-        <p className="text-muted-foreground mb-6">
-          The profile you are looking for does not exist or has been removed.
-        </p>
-        <Button onClick={() => navigate(-1)}>Go Back</Button>
-      </div>
-    );
+    return <div className="container mx-auto p-8 text-center">Loading...</div>;
   }
 
   return (
@@ -138,7 +350,7 @@ const StakeholderProfilePage = () => {
               <div className="text-center sm:text-left pb-4">
                 <h1 className="text-2xl sm:text-3xl font-bold text-white">{stakeholderData.name}</h1>
                 <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-2">
-                  <Badge variant="secondary" className="capitalize">{stakeholderData.type.replace('_', ' ')}</Badge>
+                  <Badge variant="secondary" className="capitalize">{stakeholderData.type}</Badge>
                   {stakeholderData.location && (
                     <Badge variant="outline" className="text-white border-white">
                       <MapPin className="mr-1 h-3 w-3" />
@@ -176,22 +388,22 @@ const StakeholderProfilePage = () => {
                         <>
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Founded: {stakeholderData.founded || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">Founded: {stakeholderData.founded}</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Building className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Stadium: {stakeholderData.stadium || 'N/A'} {stakeholderData.capacity ? `(${stakeholderData.capacity})` : ''}</span>
+                            <span className="text-sm text-gray-600">Stadium: {stakeholderData.stadium} ({stakeholderData.capacity})</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Award className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">League: {stakeholderData.league || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">League: {stakeholderData.league}</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Users className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Manager: {stakeholderData.manager || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">Manager: {stakeholderData.manager}</span>
                           </div>
                         </>
                       )}
@@ -200,22 +412,22 @@ const StakeholderProfilePage = () => {
                         <>
                           <div className="flex items-center space-x-2">
                             <Briefcase className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Role: {stakeholderData.role || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">Role: {stakeholderData.role}</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Users className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Current Club: {stakeholderData.club || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">Current Club: {stakeholderData.club}</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Experience: {stakeholderData.experience || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">Experience: {stakeholderData.experience}</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Award className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Previous Clubs: {stakeholderData.previousClubs?.length || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">Previous Clubs: {stakeholderData.previousClubs.length}</span>
                           </div>
                         </>
                       )}
@@ -224,22 +436,22 @@ const StakeholderProfilePage = () => {
                         <>
                           <div className="flex items-center space-x-2">
                             <Building className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Agency: {stakeholderData.agency || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">Agency: {stakeholderData.agency}</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Award className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">License: {stakeholderData.license || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">License: {stakeholderData.license}</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Experience: {stakeholderData.experience || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">Experience: {stakeholderData.experience}</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Users className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Clients: {stakeholderData.clients?.length || '0'}</span>
+                            <span className="text-sm text-gray-600">Clients: {stakeholderData.clients.length}</span>
                           </div>
                         </>
                       )}
@@ -248,12 +460,12 @@ const StakeholderProfilePage = () => {
                         <>
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Founded: {stakeholderData.founded || 'N/A'}</span>
+                            <span className="text-sm text-gray-600">Founded: {stakeholderData.founded}</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Users className="h-5 w-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Clients: {stakeholderData.clients?.length || '0'}</span>
+                            <span className="text-sm text-gray-600">Clients: {stakeholderData.clients.length}</span>
                           </div>
                         </>
                       )}
@@ -262,7 +474,7 @@ const StakeholderProfilePage = () => {
                 </Card>
                 
                 {/* Lists based on stakeholder type */}
-                {isClub(stakeholderData) && stakeholderData.achievements && stakeholderData.achievements.length > 0 && (
+                {isClub(stakeholderData) && stakeholderData.achievements.length > 0 && (
                   <Card>
                     <CardContent className="p-6">
                       <h2 className="text-xl font-semibold mb-4">Achievements</h2>
@@ -275,7 +487,7 @@ const StakeholderProfilePage = () => {
                   </Card>
                 )}
                 
-                {isCoach(stakeholderData) && stakeholderData.achievements && stakeholderData.achievements.length > 0 && (
+                {isCoach(stakeholderData) && stakeholderData.achievements.length > 0 && (
                   <Card>
                     <CardContent className="p-6">
                       <h2 className="text-xl font-semibold mb-4">Achievements</h2>
@@ -288,7 +500,7 @@ const StakeholderProfilePage = () => {
                   </Card>
                 )}
                 
-                {isAgent(stakeholderData) && stakeholderData.clients && stakeholderData.clients.length > 0 && (
+                {isAgent(stakeholderData) && stakeholderData.clients.length > 0 && (
                   <Card>
                     <CardContent className="p-6">
                       <h2 className="text-xl font-semibold mb-4">Clients</h2>
@@ -301,7 +513,7 @@ const StakeholderProfilePage = () => {
                   </Card>
                 )}
                 
-                {isAgent(stakeholderData) && stakeholderData.specialties && stakeholderData.specialties.length > 0 && (
+                {isAgent(stakeholderData) && stakeholderData.specialties.length > 0 && (
                   <Card>
                     <CardContent className="p-6">
                       <h2 className="text-xl font-semibold mb-4">Specialties</h2>
@@ -314,7 +526,7 @@ const StakeholderProfilePage = () => {
                   </Card>
                 )}
                 
-                {isClub(stakeholderData) && stakeholderData.players && stakeholderData.players.length > 0 && (
+                {isClub(stakeholderData) && stakeholderData.players.length > 0 && (
                   <Card>
                     <CardContent className="p-6">
                       <h2 className="text-xl font-semibold mb-4">Key Players</h2>
@@ -327,7 +539,7 @@ const StakeholderProfilePage = () => {
                   </Card>
                 )}
                 
-                {isServiceProvider(stakeholderData) && stakeholderData.services && stakeholderData.services.length > 0 && (
+                {isServiceProvider(stakeholderData) && stakeholderData.services.length > 0 && (
                   <Card>
                     <CardContent className="p-6">
                       <h2 className="text-xl font-semibold mb-4">Services</h2>
@@ -340,13 +552,78 @@ const StakeholderProfilePage = () => {
                   </Card>
                 )}
                 
-                {isServiceProvider(stakeholderData) && stakeholderData.certifications && stakeholderData.certifications.length > 0 && (
+                {isServiceProvider(stakeholderData) && stakeholderData.certifications.length > 0 && (
                   <Card>
                     <CardContent className="p-6">
                       <h2 className="text-xl font-semibold mb-4">Certifications</h2>
                       <div className="flex flex-wrap gap-2">
                         {stakeholderData.certifications.map((cert, index) => (
                           <Badge key={index} variant="outline">{cert}</Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="media" className="space-y-6">
+                {/* Highlights/Videos */}
+                {stakeholderData.highlights && stakeholderData.highlights.length > 0 && (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold">Highlights</h2>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {stakeholderData.highlights.map((highlight, index) => (
+                          <a 
+                            key={index}
+                            href={highlight.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block group"
+                          >
+                            <div className="relative rounded-md overflow-hidden aspect-video">
+                              <img 
+                                src={highlight.thumbnail} 
+                                alt={highlight.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="w-12 h-12 rounded-full bg-white/80 flex items-center justify-center">
+                                  <div className="w-0 h-0 border-y-8 border-y-transparent border-l-12 border-l-primary ml-1"></div>
+                                </div>
+                              </div>
+                            </div>
+                            <h3 className="mt-2 text-sm font-medium line-clamp-2">{highlight.title}</h3>
+                          </a>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {/* Photos */}
+                {stakeholderData.photos && stakeholderData.photos.length > 0 && (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold">Photos</h2>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {stakeholderData.photos.map((photo, index) => (
+                          <div key={index} className="space-y-1">
+                            <div className="rounded-md overflow-hidden aspect-video">
+                              <img 
+                                src={photo.url} 
+                                alt={photo.caption}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                              />
+                            </div>
+                            <p className="text-sm text-gray-500">{photo.caption}</p>
+                          </div>
                         ))}
                       </div>
                     </CardContent>
@@ -391,17 +668,6 @@ const StakeholderProfilePage = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
-              
-              <TabsContent value="media" className="space-y-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center py-8">
-                      <h3 className="font-medium mb-2">No media content available</h3>
-                      <p className="text-muted-foreground">This profile doesn't have any media content yet.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
             </Tabs>
           </div>
           
@@ -416,23 +682,23 @@ const StakeholderProfilePage = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Type:</span>
-                    <span className="font-medium capitalize">{stakeholderData.type.replace('_', ' ')}</span>
+                    <span className="font-medium capitalize">{stakeholderData.type}</span>
                   </div>
                   
                   <div className="flex justify-between">
                     <span className="text-gray-500">Location:</span>
-                    <span className="font-medium">{stakeholderData.location || 'N/A'}</span>
+                    <span className="font-medium">{stakeholderData.location}</span>
                   </div>
                   
                   {isClub(stakeholderData) && (
                     <>
                       <div className="flex justify-between">
                         <span className="text-gray-500">League:</span>
-                        <span className="font-medium">{stakeholderData.league || 'N/A'}</span>
+                        <span className="font-medium">{stakeholderData.league}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Founded:</span>
-                        <span className="font-medium">{stakeholderData.founded || 'N/A'}</span>
+                        <span className="font-medium">{stakeholderData.founded}</span>
                       </div>
                     </>
                   )}
@@ -441,11 +707,11 @@ const StakeholderProfilePage = () => {
                     <>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Role:</span>
-                        <span className="font-medium">{stakeholderData.role || 'N/A'}</span>
+                        <span className="font-medium">{stakeholderData.role}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Current Club:</span>
-                        <span className="font-medium">{stakeholderData.club || 'N/A'}</span>
+                        <span className="font-medium">{stakeholderData.club}</span>
                       </div>
                     </>
                   )}
@@ -454,11 +720,11 @@ const StakeholderProfilePage = () => {
                     <>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Agency:</span>
-                        <span className="font-medium">{stakeholderData.agency || 'N/A'}</span>
+                        <span className="font-medium">{stakeholderData.agency}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Experience:</span>
-                        <span className="font-medium">{stakeholderData.experience || 'N/A'}</span>
+                        <span className="font-medium">{stakeholderData.experience}</span>
                       </div>
                     </>
                   )}
@@ -467,7 +733,7 @@ const StakeholderProfilePage = () => {
                     <>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Founded:</span>
-                        <span className="font-medium">{stakeholderData.founded || 'N/A'}</span>
+                        <span className="font-medium">{stakeholderData.founded}</span>
                       </div>
                     </>
                   )}

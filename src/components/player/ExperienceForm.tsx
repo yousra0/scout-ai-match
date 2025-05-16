@@ -4,165 +4,167 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import type { PlayerExperience } from './PlayerExperience';
+import { Loader2 } from 'lucide-react';
+import { PlayerExperience } from '@/contexts/AuthContext';
 
-export interface ExperienceFormProps {
+interface ExperienceFormProps {
+  experience?: PlayerExperience;
+  onSubmit: (data: any) => void;
   onCancel: () => void;
-  onComplete: () => void;
-  userId: string;
-  experienceData?: PlayerExperience;
 }
 
-const ExperienceForm = ({ onCancel, onComplete, userId, experienceData }: ExperienceFormProps) => {
-  const [club, setClub] = useState(experienceData?.club || '');
-  const [role, setRole] = useState(experienceData?.role || '');
-  const [startDate, setStartDate] = useState(experienceData?.start_date || '');
-  const [endDate, setEndDate] = useState(experienceData?.end_date || '');
-  const [isCurrent, setIsCurrent] = useState(experienceData?.is_current_role || false);
-  const [achievements, setAchievements] = useState(experienceData?.achievements || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+const ExperienceForm = ({ experience, onSubmit, onCancel }: ExperienceFormProps) => {
+  const [formData, setFormData] = useState({
+    club: experience?.club || '',
+    role: experience?.role || '',
+    start_date: experience?.start_date ? new Date(experience.start_date).toISOString().split('T')[0] : '',
+    end_date: experience?.end_date ? new Date(experience.end_date).toISOString().split('T')[0] : '',
+    achievements: experience?.achievements || '',
+    is_current: experience?.end_date ? false : true
+  });
+  
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      is_current: checked,
+      end_date: checked ? '' : prev.end_date
+    }));
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!club || !role || !startDate) {
-      toast({
-        title: 'Required fields missing',
-        description: 'Please fill all required fields',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
+    setIsLoading(true);
     
     try {
-      const experiencePayload = {
-        player_id: userId,
-        club,
-        role,
-        start_date: startDate,
-        end_date: isCurrent ? null : endDate,
-        is_current_role: isCurrent,
-        achievements: achievements || null,
-      };
-      
-      let error;
-      
-      if (experienceData?.id) {
-        // Update existing experience
-        const { error: updateError } = await supabase
-          .from('player_experience')
-          .update(experiencePayload)
-          .eq('id', experienceData.id);
-          
-        error = updateError;
-      } else {
-        // Create new experience
-        const { error: insertError } = await supabase
-          .from('player_experience')
-          .insert([experiencePayload]);
-          
-        error = insertError;
-      }
-      
-      if (error) throw error;
-      
-      toast({
-        title: experienceData ? 'Experience updated' : 'Experience added',
-        description: experienceData ? 'Your experience has been updated successfully.' : 'Your experience has been added to your profile.',
+      await onSubmit({
+        club: formData.club,
+        role: formData.role,
+        start_date: formData.start_date,
+        end_date: formData.is_current ? null : formData.end_date || null,
+        achievements: formData.achievements
       });
-      
-      onComplete();
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save experience',
-        variant: 'destructive',
-      });
+    } catch (error) {
+      console.error('Form submission error:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="club">Club/Organization*</Label>
-        <Input
-          id="club"
-          value={club}
-          onChange={(e) => setClub(e.target.value)}
-          placeholder="FC Barcelona"
-          required
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="role">Position/Role*</Label>
-        <Input
-          id="role"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          placeholder="Forward, Coach, etc."
-          required
-        />
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="startDate">Start Date*</Label>
+          <Label htmlFor="club">Club</Label>
           <Input
-            id="startDate"
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            id="club"
+            name="club"
+            value={formData.club}
+            onChange={handleChange}
             required
+            disabled={isLoading}
+            placeholder="FC Barcelona"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="endDate">End Date</Label>
+          <Label htmlFor="role">Position/Role</Label>
           <Input
-            id="endDate"
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            required
+            disabled={isLoading}
+            placeholder="Striker"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="start_date">Start Date</Label>
+          <Input
+            id="start_date"
+            name="start_date"
             type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            disabled={isCurrent}
+            value={formData.start_date}
+            onChange={handleChange}
+            required
+            disabled={isLoading}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="end_date" className={formData.is_current ? "text-gray-400" : ""}>End Date</Label>
+          <Input
+            id="end_date"
+            name="end_date"
+            type="date"
+            value={formData.end_date}
+            onChange={handleChange}
+            disabled={isLoading || formData.is_current}
           />
         </div>
       </div>
       
       <div className="flex items-center space-x-2">
-        <Checkbox 
-          id="current"
-          checked={isCurrent}
-          onCheckedChange={(checked) => setIsCurrent(checked as boolean)}
+        <input
+          type="checkbox"
+          id="is_current"
+          checked={formData.is_current}
+          onChange={handleCheckboxChange}
+          disabled={isLoading}
+          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
         />
-        <Label htmlFor="current">I currently work here</Label>
+        <Label htmlFor="is_current" className="font-normal text-sm">
+          I currently play here
+        </Label>
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="achievements">Key Achievements</Label>
+        <Label htmlFor="achievements">Achievements</Label>
         <Textarea
           id="achievements"
-          value={achievements}
-          onChange={(e) => setAchievements(e.target.value)}
-          placeholder="Describe your key achievements, awards, or statistics..."
+          name="achievements"
+          value={formData.achievements}
+          onChange={handleChange}
+          disabled={isLoading}
           rows={3}
+          placeholder="Goals scored, trophies won, etc."
         />
       </div>
       
-      <div className="flex justify-end space-x-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+      <div className="flex justify-end space-x-3 pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isLoading}
+        >
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : experienceData ? 'Update' : 'Save'}
+        
+        <Button
+          type="submit"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {experience ? 'Updating...' : 'Adding...'}
+            </>
+          ) : (
+            experience ? 'Update Experience' : 'Add Experience'
+          )}
         </Button>
       </div>
     </form>
