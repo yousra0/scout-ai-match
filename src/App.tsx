@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,18 +36,38 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppRoutes = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, profile } = useAuth();
 
   // Guard: do nothing until loading is done!
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
+  const profileRedirectPath = () => {
+    if (profile?.user_type === "player" && user) return `/players/${user.id}`;
+    if (profile?.user_type === "coach" && user) return `/coaches/${user.id}`;
+    if (profile?.user_type === "agent" && user) return `/agents/${user.id}`;
+    if (profile?.user_type === "club" && user) return `/clubs/${user.id}`;
+    if (profile?.user_type === "sponsor" && user) return `/sponsors/${user.id}`;
+    if (profile?.user_type === "equipment_supplier" && user) return `/equipment-suppliers/${user.id}`;
+    return "/";
+  };
+
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" replace />} />
-      <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/" replace />} />
+      <Route
+        path="/login"
+        element={
+          !user ? <LoginPage /> : <Navigate to={profileRedirectPath()} replace />
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          !user ? <RegisterPage /> : <Navigate to={profileRedirectPath()} replace />
+        }
+      />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route path="/explore" element={<ScoutingPage />} />
@@ -56,11 +75,12 @@ const AppRoutes = () => {
       <Route path="/recommendations" element={<RecommendationsPage />} />
       <Route path="/opportunities" element={<OpportunitiesPage />} />
 
+      {/* Updated: Always redirect /profile to the right profile page */}
       <Route
         path="/profile"
         element={
           user ? (
-            <Navigate to={`/players/${user.id}`} replace />
+            <Navigate to={profileRedirectPath()} replace />
           ) : (
             <Navigate to="/login" replace />
           )
@@ -127,4 +147,3 @@ const App = () => (
 );
 
 export default App;
-
